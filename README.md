@@ -1,1 +1,1 @@
-# flow-components
+# Custom Total.js Flow components
