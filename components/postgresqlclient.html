@@ -1,0 +1,120 @@
+<script total>
+
+exports.id = "postgresqlclient";
+exports.name = "PostgreSQL Client";
+exports.icon = "ti ti-database";
+exports.author = "Total.js | Alberto Cruz";
+exports.group = "Databases";
+exports.version = "1";
+exports.config = {
+	id: "default",
+	host: "localhost:5432",
+	user: "",
+	pass: "",
+	db: "",
+	url: ""
+};
+exports.outputs = [{ id: "error", name: "Error" }];
+exports.npm = ["querybuilderpg"];
+
+exports.make = (instance, config) => {
+
+	const QB = require("querybuilderpg");
+	let conf = null;
+	let active = false;
+
+	instance.validate = (cfg) => {
+		const regex = /^[\w\.-]+:\d{2,5}$/;
+		if (!regex.test(cfg.host))
+			return "Invalid host format. Use host:port (e.g. localhost:5432)";
+		return true;
+	};
+
+	instance.configure = () => {
+
+		conf = instance.replace(config);
+		conf.url = `postgresql://${conf.user}:${conf.pass}@${conf.host}/${conf.db}`;
+
+		if (active)
+			QB.init(conf.id);
+
+		if (conf.url) {
+			QB.init(conf.id, conf.url, 1, (err, data) => {
+				if (err)
+					instance.newmessage([{ error: `${err} --> ${data?.query || "unknown query"}` }]).send("error");
+			});
+			active = true;
+		}
+	};
+
+	instance.close = () => {
+		if (conf)
+			QB.init(conf.id, null);
+		conf = null;
+		active = false;
+	};
+
+	instance.configure();
+};
+
+</script>
+
+<readme>
+The component initializes QueryBuilder for the PostgreSQL database. Each connection must be separated by an alias.
+</readme>
+
+<settings>
+	<div class="padding">
+		<ui-component name="input" path="?.id" config="required:1;icon:ti ti-link" class="m">Alias</ui-component>
+		<div class="help">The alias separates various DB connections</div>
+
+		<ui-component name="input" path="?.host" config="required:1;icon:ti" class="m">Host/IP:Port</ui-component>
+		<div class="help">Format: localhost:5432 or 192.168.1.100:5433</div>
+
+		<ui-component name="input" path="?.user" config="required:1;icon:ti ti-user" class="m">User</ui-component>
+
+		<ui-component name="input" path="?.pass" config="required:1;camouflage:1;icon:ti ti-lock" class="m">Password</ui-component>
+
+		<ui-component name="input" path="?.db" config="required:1;icon:ti ti-database" class="m">Database</ui-component>
+	</div>
+</settings>
+
+<style>
+.CLASS footer {
+	padding: 0 10px 10px;
+	font-size: 12px;
+}
+
+.f-postgresqlclient header {
+	background-color: #d3af80;
+	font-weight: bold;
+	border-radius: 8px 8px 0 0;
+}
+
+figure[data-id="postgresqlclient"] {
+	background-color: #d3af80;
+	font-weight: bold;
+}
+
+.ui-flow .component {
+	border-radius: 9px 9px 0 0;
+}
+
+.ui-flow .component-io {
+	width: 14px;
+	height: 14px;
+}
+</style>
+
+<body>
+	<header>
+		<i class="$ICON"></i>$NAME
+	</header>
+	<footer>
+		<ui-bind path="$CONFIG" config="template">
+			<script type="text/html">
+				<div class="b fs14">{{ value.id }}</div>
+			</script>
+		</ui-bind>
+	</footer>
+</body>
