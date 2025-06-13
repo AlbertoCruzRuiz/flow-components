@@ -1,72 +1,117 @@
 <script total>
 
-	exports.id = 'code';
-	exports.name = 'Code';
-	exports.group = 'Common';
-	exports.version = '4';
-	exports.icon = 'ti ti-code';
-	exports.author = 'Total.js';
-	exports.config = { outputs: 1, name: 'Code', code: '// instance {FlowStreamInstance};\n// $ {FlowStreamMessage};\n// vars {Object};\n// repo {Object};\n// data {String/Number/Boolean/Date/Buffer/Object};\n// $.send(\'output\', data); // or simply send(data); which uses the first output\n// $.destroy();\n// $.throw(err);\n\n// IMPORTANT: If you do not perform re-send, you need to destroy this message via $.destroy() method\n// IMPORTANT: methods $.send(), $.destroy() and $.throw() can be executed only once\n\n// $.send(\'output\', data);\n$.destroy();' };
-	exports.inputs = [{ id: 'input', name: 'Input' }];
-	exports.outputs = [{ id: 'output', name: 'Output' }];
-	exports.meta = { settingswidth: 1200 };
+	exports.id = "code";
+	exports.name = "Code";
+	exports.group = "Data Manipulation";
+	exports.version = "1";
+	exports.icon = "ti ti-code";
+	exports.author = "Total.js | Alberto Cruz";
+	exports.config = {
+		outputs: 1,
+		name: "Code",
+		code: `// # Input data #
+// data types: {String/Number/Boolean/Date/Buffer/Object};
+// let variable_1 = data;
+// let variable_2 = data.message;
+
+// # Output data #
+//send(data);
+// OR
+//send(output_number, data);
+
+// send(1, variable_2);
+`
+	};
+
+	exports.inputs = [{ id: "input", name: "Input: data" }];
+	exports.outputs = [{ id: "output", name: "Output 1: output_1" }];
+	exports.meta = {
+		settingswidth: 1200,
+		display: true
+	};
 
 	exports.make = function(instance, config) {
 
-		var fn;
+		let fn = null;
 
 		instance.message = function($) {
-			if (fn) {
-				try {
-					var send = data => $.send('output', data);
-					fn($.data, instance, $, $, F.require, send, $.repo, $.vars, $.data);
-				} catch (e) {
-					$.throw(e);
-					$.destroy();
-				}
+			if (!fn)
+				return;
+
+			let handled = false;
+
+			// Hook into send() and throw() to track usage
+			const originalSend = $.send;
+			const originalThrow = $.throw;
+
+			$.send = function() {
+				handled = true;
+				return originalSend.apply($, arguments);
+			};
+
+			$.throw = function() {
+				handled = true;
+				return originalThrow.apply($, arguments);
+			};
+
+			try {
+				const send = function(a, b) {
+					if (arguments.length === 1) {
+						$.send("output", a);
+					} else if (typeof a === "number") {
+						const id = "output" + (a === 1 ? "" : a);
+						$.send(id, b);
+					} else {
+						$.send(a, b);
+					}
+				};
+
+				fn($.data, instance, $, $, F.require, send, $.repo, $.vars, $.data);
+			} catch (err) {
+				$.throw(err);
 			}
+
+			if (!handled)
+				$.destroy();
 		};
 
 		instance.configure = function() {
-			instance.outputs = [];
-			for (let i = 1; i <= config.outputs; i++)
-				instance.outputs.push({ id: 'output' + (i === 1 ? '' : i), name: 'Output #' + i });
+			instance.outputs = Array.from({ length: config.outputs }, (_, i) => ({
+				id: "output" + (i === 0 ? "" : i + 1),
+				name: "Output " + (i + 1) + ": output_" + (i + 1)
+			}));
 			instance.save();
 
 			try {
 				if (config.code) {
 					instance.status(1);
-					fn = new Function('value', 'instance', '$', 'message', 'require', 'send', 'repo', 'vars', 'data', config.code);
+					fn = new Function("value", "instance", "$", "message", "require", "send", "repo", "vars", "data", config.code);
 				} else {
 					instance.status(0);
 					fn = null;
 				}
-			} catch (e) {
+			} catch (err) {
 				fn = null;
-				instance.throw('Code: ' + e.message);
+				instance.throw("Code: " + err.message);
 			}
 		};
 
-		instance.close = function() {
-			fn = null;
-		};
+		instance.close = () => fn = null;
 
 		instance.configure();
-
 	};
 
 </script>
 
 <readme>
-This component executes a custom JavaScript code as it is.
+This component executes custom JavaScript dynamically.
 
-To send data to the default output use `send(somedata);`
-To send data to specific output when number of outputs > 1 use `$.send('outputX', somedata)` where `X` is output index, see example bellow:
-- first output--> `send(somedata)` or `$.send('output', somedata)`
-- second output --> `$.send('output2', somedata)`
-- ...
-- 5th output --> `$.send('output5', somedata)`
-- etc.
+You can send output using:
+- `send(data)` → sends to first output (`output_1`)
+- `send(3, data)` → sends to `output_3`
+- `$.send("output2", data)` → traditional style
+- `$.throw(error)` → sends error
+- `$.destroy()` is called automatically if nothing is sent or thrown
 </readme>
 
 <settings>
@@ -87,18 +132,18 @@ To send data to specific output when number of outputs > 1 use `$.send('outputX'
 </settings>
 
 <script>
-	TOUCH(function(exports, init) {
+	TOUCH(function(exports) {
 		exports.configure = function() {
-			var changes = exports.instance.changes;
-			if (changes && changes.newbie) {
-				var outputs = [];
-				var count = exports.instance.config.outputs;
-				for (let i = 1; i <= count; i++)
-					outputs.push({ id: 'output' + (i === 1 ? '' : i), name: (count === 1 ? 'Output' : 'Output #' + i) });
-				exports.instance.outputs = outputs;
-				UPD('flow.data');
+			const changes = exports.instance.changes;
+			if (changes?.newbie) {
+				const count = exports.instance.config.outputs;
+				exports.instance.outputs = Array.from({ length: count }, (_, i) => ({
+					id: "output" + (i === 0 ? "" : i + 1),
+					name: "Output " + (i + 1) + ": output_" + (i + 1)
+				}));
+				UPD("flow.data");
 			}
-		}
+		};
 	});
 </script>
 
@@ -107,3 +152,22 @@ To send data to specific output when number of outputs > 1 use `$.send('outputX'
 		<i class="ICON"></i>NAME
 	</header>
 </body>
+
+<style>
+.f-code header {
+	background-color: #f0c59a;
+	font-weight: bold;
+	border-radius: 8px 8px 0 0;
+}
+figure[data-id="code"] {
+	background-color: #f0c59a;
+	font-weight: bold;
+}
+.ui-flow .component {
+	border-radius: 9px 9px 0 0;
+}
+.ui-flow .component-io {
+	width: 14px;
+	height: 14px;
+}
+</style>
