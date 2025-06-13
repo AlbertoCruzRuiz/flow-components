@@ -62,11 +62,11 @@ exports.make = function (instance, config) {
 
 	function connect() {
 		state();
-		const broker = `${config.secure ? "mqtts" : "mqtt"}://${config.host}:${config.port}`;
+		const client = `${config.secure ? "mqtts" : "mqtt"}://${config.host}:${config.port}`;
 		config.name = `[MQTT] ${config.host}:${config.port}`;
 		const opt = CLONE(config);
 		delete opt.auth;
-		client = mqtt.connect(broker, opt);
+		client = mqtt.connect(client, opt);
 
 		client.on("connect", () => {
 			state();
@@ -105,7 +105,7 @@ exports.make = function (instance, config) {
 
 	function notifypubsub() {
 		const instances = instance.main.instances().filter(i =>
-			i.module.flags?.includes("mqttbroker-dep") && i.config.broker === instance.id
+			i.module.flags?.includes("mqttclient-dep") && i.config.client === instance.id
 		);
 		instances.forEach(com => com.configure());
 	}
