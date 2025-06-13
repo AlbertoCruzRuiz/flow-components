@@ -33,8 +33,8 @@ exports.make = function (instance, config) {
 		}
 	};
 
-	instance.onmessage = function (topic, message, match, ts) {
-		instance.send("message", { topic, message, match, ts });
+	instance.onmessage = function (topic, message, match, server_stamp) {
+		instance.send("message", { topic, message, match, server_stamp });
 	};
 
 	instance.close = function () {
