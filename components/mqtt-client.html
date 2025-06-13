@@ -1,262 +1,162 @@
 <script total>
+exports.id = "mqttclient";
+exports.name = "MQTT Client";
+exports.icon = "ti ti-exchange";
+exports.group = "MQTT";
+exports.author = "Total.js | Alberto Cruz";
+exports.version = "1";
+exports.npm = ["mqtt"];
+exports.flags = ["mqttclient"];
 
-	exports.id = 'mqttbroker';
-	exports.name = 'MQTT Broker';
-	exports.icon = 'ti ti-exchange';
-	exports.group = 'MQTT';
-	exports.config = { host: 'localhost', port: 1883, secure: false };
-	exports.outputs = [{ id: 'output', name: 'Messages' }];
-	exports.author = 'Martin Smola';
-	exports.version = '3';
-	exports.npm = ['mqtt'];
-	exports.flags = ['mqttbroker'];
+exports.config = {
+	host: "localhost",
+	port: 1883,
+	secure: false
+};
 
-	exports.make = function(instance, config) {
+exports.outputs = [{ id: "output", name: "Messages" }];
 
-		const mqtt = require('mqtt');
-		var client;
-		const subscribtions = {};
+exports.make = function (instance, config) {
+	const mqtt = require("mqtt");
+	let client;
+	const subscriptions = {};
 
-		const state = () => {
-			var obj;
-			if (!client) {
-				obj = { connected: false, connecting: false, disconnected: true, disconnnecting: false, status: 'disconnected' };
-			} else {
-				const { connected, disconnecting, reconnecting } = client;
-				obj = { connecting: client.stream ? client.stream.connecting : false, connected, disconnecting, reconnecting };
-				const current = Object.keys(obj).filter(s => obj[s]);
-				obj.status = current.length ? current[0] : 'disconnected';
-			}
-
-			instance.state = { status: obj.status, name: config.host + ':' + config.port };
-			instance.status(instance.state);
-			return obj;
-		};
-
-		instance.configure = function() {
-			disconnect(connect);
-		};
-
-		instance.close = function() {
-			disconnect(notifypubsub);
-		};
-
-		instance.configure();
-
-		function disconnect(callback) {
-			if (!client)
-				return callback && callback();
-
-			if (client.end)
-				client.end(true, cb);
-			else
-				cb();
-
-			function cb() {
-				client.removeAllListeners();
-				client = null;
-				callback && callback();
+	const state = () => {
+		let obj;
+		if (!client) {
+			obj = {
+				connected: false,
+				connecting: false,
+				disconnected: true,
+				disconnecting: false,
+				status: "disconnected"
 			};
-		};
+		} else {
+			const { connected, disconnecting, reconnecting } = client;
+			obj = {
+				connecting: client.stream ? client.stream.connecting : false,
+				connected,
+				disconnecting,
+				reconnecting
+			};
+			const current = Object.keys(obj).filter(k => obj[k]);
+			obj.status = current.length ? current[0] : "disconnected";
+		}
 
-		function connect() {
+		instance.state = { status: obj.status, name: `${config.host}:${config.port}` };
+		instance.status(instance.state);
+		return obj;
+	};
 
+	function disconnect(callback) {
+		if (!client) return callback && callback();
+		if (client.end) client.end(true, cb);
+		else cb();
+
+		function cb() {
+			client.removeAllListeners();
+			client = null;
+			callback && callback();
+		}
+	}
+
+	function connect() {
+		state();
+		const broker = `${config.secure ? "mqtts" : "mqtt"}://${config.host}:${config.port}`;
+		config.name = `[MQTT] ${config.host}:${config.port}`;
+		const opt = CLONE(config);
+		delete opt.auth;
+		client = mqtt.connect(broker, opt);
+
+		client.on("connect", () => {
 			state();
+			notifypubsub();
+		});
+		client.on("reconnect", state);
+		client.on("message", (topic, message) => {
+			message = message.toString();
+			if (message[0] === "{" || message[0] === "[")
+				message = message.parseJSON(true);
+			onmessage(topic, message);
+		});
+		client.on("close", err => {
+			console.log(`${config.name} close`, err);
+			state();
+		});
+		client.on("error", err => {
+			console.log(`${config.name} error`, err);
+			state();
+		});
+	}
 
-			var broker = config.secure ? 'mqtts://' : 'mqtt://' + config.host + ':' + config.port;
-			config.name = '[MQTT] ' + config.host + ':' + config.port;
-			var opt = CLONE(config);
-			delete opt.auth;
-			client = mqtt.connect(broker, opt);
-
-			client.on('connect', function() {
-				state();
-				notifypubsub();
-			});
-
-			client.on('reconnect', function() {
-				state();
-			});
-
-			client.on('message', function(topic, message) {
-				message = message.toString();
-				if (message[0] === '{' || message[0] === '[')
-					message = message.parseJSON(true);
-
-				onmessage(topic, message);
-			});
-
-			client.on('close', function(err) {
-				console.log(config.name + ' close', err);
-				state();
-			});
-
-			client.on('error', function(err) {
-				console.log(config.name + ' error', err);
-				state();
-			});
-		};
-
-		function onmessage(topic, message) {
-			let ts = new Date();
-			for (const sub in subscribtions) {
-				var match = mqttWildcard(topic, sub);
-				if (match) {
-					const ids = subscribtions[sub];
-					const len = ids.length;
-					for (let i = 0; i < len; i++) {
-						const com = instance.main.find(ids[i]);
-						com && com.onmessage(topic, message, match, ts);
-					}
-				}
+	function onmessage(topic, message) {
+		const ts = new Date();
+		for (const sub in subscriptions) {
+			const match = mqttWildcard(topic, sub);
+			if (match) {
+				subscriptions[sub].forEach(id => {
+					const com = instance.main.find(id);
+					com && com.onmessage(topic, message, match, ts);
+				});
 			}
-			instance.send('output', { topic, message, ts });
+		}
+		instance.send("output", { topic, message, ts });
+	}
+
+	function notifypubsub() {
+		const instances = instance.main.instances().filter(i =>
+			i.module.flags?.includes("mqttbroker-dep") && i.config.broker === instance.id
+		);
+		instances.forEach(com => com.configure());
+	}
+
+	function mqttWildcard(topic, wildcard) {
+		if (topic === wildcard) return [];
+		if (wildcard === "#") return [topic];
+
+		const t = String(topic).split("/");
+		const w = String(wildcard).split("/");
+		const res = [];
+
+		for (let i = 0; i < t.length; i++) {
+			if (w[i] === "+") {
+				res.push(t[i]);
+			} else if (w[i] === "#") {
+				res.push(t.slice(i).join("/"));
+				return res;
+			} else if (w[i] !== t[i]) {
+				return null;
+			}
 		}
 
-		instance.publish = function(topic, message, options) {
-			var isstring = typeof(message) === 'string';
-			var data = '';
-			if (isstring)
-				data = message;
-			else
-				try {
-					data = JSON.stringify(message);
-				} catch(e) {}
+		return (t.length === w.length) ? res : null;
+	}
 
-			client && client.publish(topic, data, options, function(err){
-				if (err)
-					console.log(config.name + ' publish error', err);
-			});
-		};
-
-		instance.subscribe = function(componentid, topic) {
-			var self = this;
-			subscribtions[topic] = subscribtions[topic] || [];
-			if (subscribtions[topic].indexOf(componentid) > -1)
-				return;
-
-			client.subscribe(topic);
-			subscribtions[topic].push(componentid);
-		};
-
-		instance.unsubscribe = function(componentid, topic) {
-			var self = this;
-			var sub = subscribtions[topic];
-			if (sub) {
-				subscribtions[topic] = sub.remove(componentid);
-				client && client.connected && !subscribtions[topic].length && client.unsubscribe(topic);
-			}
-		};
-
-		function notifypubsub() {
-			var instances = instance.main.instances().filter(i => i.module.flags && i.module.flags.includes('mqttbroker-dep') > -1 && i.config.broker === instance.id);
-			for (let com of instances)
-				com.configure();
+	instance.configure = () => disconnect(connect);
+	instance.close = () => disconnect(notifypubsub);
+	instance.publish = (topic, message, options) => {
+		const data = typeof message === "string" ? message : JSON.stringify(message || {});
+		client?.publish(topic, data, options, err => {
+			if (err) console.log(`${config.name} publish error`, err);
+		});
+	};
+	instance.subscribe = (id, topic) => {
+		subscriptions[topic] = subscriptions[topic] || [];
+		if (!subscriptions[topic].includes(id)) {
+			client?.subscribe(topic);
+			subscriptions[topic].push(id);
 		}
-
-		// https://github.com/hobbyquaker/mqtt-wildcard
-		function mqttWildcard(topic, wildcard) {
-			if (topic === wildcard) {
-				return [];
-			} else if (wildcard === '#') {
-				return [topic];
+	};
+	instance.unsubscribe = (id, topic) => {
+		const sub = subscriptions[topic];
+		if (sub) {
+			subscriptions[topic] = sub.filter(x => x !== id);
+			if (client?.connected && subscriptions[topic].length === 0) {
+				client.unsubscribe(topic);
 			}
-
-			var res = [];
-
-			var t = String(topic).split('/');
-			var w = String(wildcard).split('/');
-
-			var i = 0;
-			for (var lt = t.length; i < lt; i++) {
-				if (w[i] === '+') {
-					res.push(t[i]);
-				} else if (w[i] === '#') {
-					res.push(t.slice(i).join('/'));
-					return res;
-				} else if (w[i] !== t[i]) {
-					return null;
-				}
-			}
-
-			if (w[i] === '#') {
-				i += 1;
-			}
-
-			return (i === w.length) ? res : null;
 		}
 	};
 
+	instance.configure();
+};
 </script>
-
-<readme>
-
-</readme>
-
-<style>
-	.CLASS footer { padding: 10px; font-size: 11px; }
-	.CLASS footer > ui-bind > div { height: 16px; }
-	.CLASS footer b { float: right; }
-</style>
-
-<settings>
-	<div class="padding">
-		<div class="row m">
-			<div class="col-md-4">
-				<ui-component name="input" path="?.host" config="placeholder:test.mosquitto.org;required:1">Hostname or IP address</ui-component>
-			</div>
-			<div class="col-md-4">
-				<ui-component name="input" path="?.port" config="type:number;placeholder:1883;required:1;format:">Port</ui-component>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-6">
-				<ui-component name="input" path="?.clientid">Client id</ui-component>
-				<div class="help m">Supports variables, example: \`client_{device-id}\`</div>
-				<ui-component name="checkbox" path="?.secure" class="m">Secure (ssl)</ui-component>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-6">
-				<ui-component name="checkbox" path="?.auth" class="m">Require Authorization</ui-component>
-			</div>
-		</div>
-		<ui-bind path="?.auth" config="show:value" class="row block">
-			<div class="col-md-6">
-				<ui-component name="input" path="?.username" class="m">Username</ui-component>
-			</div>
-			<div class="col-md-6">
-				<ui-component name="input" path="?.password" data-jc-config="type:password" class="m">Password</ui-component>
-			</div>
-		</ui-bind>
-		<div class="row">
-			<div class="col-md-6">
-				<ui-component name="checkbox" path="?.lwt" class="m">LWT</ui-component>
-			</div>
-		</div>
-		<ui-bind path="?.lwt" config="show:value" class="row block">
-			<div class="col-md-6">
-				<ui-component name="input" path="?.lwttopic">Last will topic</ui-component>
-				<div class="help m">Supports variables, example: \`lwt/{device-id}\`</div>
-			</div>
-			<div class="col-md-6">
-				<ui-component name="input" path="?.lwtmessage">Last will message</ui-component>
-				<div class="help m">Supports variables, example: \`{device-id} is offline\`</div>
-			</div>
-		</ui-bind>
-	</div>
-</settings>
-
-<body>
-	<header>
-		<i class="ICON"></i>NAME
-	</header>
-	<footer>
-		<ui-bind path="!STATUS" config="template;show" class="block">
-			<script type="text/html">
-				<div><b>{{ value.name }}</b>Name</div>
-				<div><b>{{ value.status }}</b>Status</div>
-			</script>
-		</ui-bind>
-	</footer>
-</body>
