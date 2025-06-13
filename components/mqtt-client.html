@@ -89,17 +89,17 @@ exports.make = function (instance, config) {
 	}
 
 	function handleMessage(topic, message) {
-		const ts = new Date();
+		const server_stamp = new Date().toISOString();
 		for (const sub in subscriptions) {
 			const match = mqttWildcard(topic, sub);
 			if (match) {
 				subscriptions[sub].forEach(id => {
 					const com = instance.main.find(id);
-					com?.onmessage(topic, message, match, ts);
+					com?.onmessage(topic, message, match, server_stamp);
 				});
 			}
 		}
-		instance.send("output", { topic, message, ts });
+		instance.send("output", { topic, message, server_stamp });
 	}
 
 	function notifyDependents() {
