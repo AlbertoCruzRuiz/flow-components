@@ -768,16 +768,16 @@
 		"readme": "The component generates QR Code.\n\n__Input data__:\n\n```js\n{\n\ttext: String\n}\n```\n\n__Output data__:\n\n```js\n{\n\ttext: String,\n\tdata: 'Data URL - BASE64'\n}\n```"
 	},
 	{
-		"id": "querybuilderpg",
-		"group": "REST API",
-		"name": "QueryBuilder PG",
-		"url": "https://cdn.totaljs.com/flowstream/webcomponents/querybuilderpg.html",
-		"author": "Total.js",
+		"id": "postgresqlclient",
+		"group": "Databases",
+		"name": "PostgreSQL Client",
+		"url": "https://albertocruzruiz.github.io/flow-components/components/postgresqlclient.html",
+		"author": "Total.js | Alberto Cruz",
 		"icon": "ti ti-database",
 		"color": "",
 		"version": "1",
 		"kind": "",
-		"readme": "The component initializes QueryBuilder for the PostgreSQL database. So you can use the 'API Database` component. Each connection must be separated by an alias.\n\n__Usage in API Database__:\n\n- `tbl_user` is targeted to the `default/tbl_user` alias connection\n- `anotherserver/tbl_user` will use `anotherserver` alias connection"
+		"readme": "The component initializes QueryBuilder for the PostgreSQL database. Each connection must be separated by an alias."
 	},
 	{
 		"id": "queue",
@@ -936,11 +936,11 @@
 		"readme": "The component splits a message with an array of objects on the input into separate messages with individual objects on the output.\n\n__Input example__:\n\n```js\n[\n\t{\n\t\t\"email\": \"michal@totaljs.com\",\n\t\t\"date\": 20220202,\n\t\t\"meno\": \"Michal Klacan\"\n\t},\n\t{\n\t\t\"email\": \"martin@totaljs.com\",\n\t\t\"date\": 20220204,\n\t\t\"meno\": \"Martin Smola\"\n\t},\n\t{\n\t\t\"email\": \"peter@totaljs.com\",\n\t\t\"datum\": 20220210,\n\t\t\"meno\": \"Peter Sirka\"\n\t}\n]\n```\n\n__Output example__:\n\n```js\n{\n\t\"email\": \"michal@totaljs.com\",\n\t\"date\": 20220202,\n\t\"meno\": \"Michal Klacan\"\n}\n```\n\n```js\n{\n\t\"email\": \"martin@totaljs.com\",\n\t\"date\": 20220204,\n\t\"meno\": \"Martin Smola\"\n}\n```\n\n```js\n{\n\t\"email\": \"peter@totaljs.com\",\n\t\"datum\": 20220210,\n\t\"meno\": \"Peter Sirka\"\n}\n```"
 	},
 	{
-		"id": "restsql",
-		"group": "REST API",
+		"id": "sqlquery",
+		"group": "Databases",
 		"name": "SQL query",
-		"url": "https://cdn.totaljs.com/flowstream/webcomponents/restsql.html",
-		"author": "Total.js",
+		"url": "https://albertocruzruiz.github.io/flow-components/components/sqlquery.html",
+		"author": "Total.js | Alberto Cruz",
 		"icon": "ti ti-database",
 		"color": "",
 		"version": "1",
