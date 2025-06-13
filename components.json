@@ -564,40 +564,40 @@
 		"readme": "Uses mquery under the hood. Here is the [documentation](https://www.npmjs.com/package/mquery)\n\n## Input\n\nExample\n```javascript\n{\n    database: 'database-name',\n    collection: 'collection-name',\n\tdata: <any> // this prop will be passed into the query function\n}\n```\n\n## Query editor\n```js\n// query; mquery instance\n// data; data from the incomming object\n\nquery.find(); // return all documents\n```\n\n## Important\nIn the `.select()` you cannot use inclusion and exclusion together.\nThis is invalid: `.select('firstname -lastname')`\nValid exclusion: `.select('-lastname')` or `.select('-email -lastname')` etc.\nValid inclusion: `.select('name email')` or `.select('email lastname')` etc."
 	},
 	{
-		"id": "mqtt-broker",
+		"id": "mqtt-client",
 		"group": "MQTT",
-		"name": "MQTT Broker",
-		"url": "https://cdn.totaljs.com/flowstream/webcomponents/mqtt-broker.html",
-		"author": "Martin Smola",
+		"name": "MQTT Client",
+		"url": "https://albertocruzruiz.github.io/flow-components/components/mqtt-client.html",
+		"author": "Total.js | Alberto Cruz",
 		"icon": "ti ti-exchange",
 		"color": "",
-		"version": "3",
+		"version": "1",
 		"kind": "",
-		"readme": ""
+		"readme": "MQTT Client"
 	},
 	{
-		"id": "mqtt-publish",
+		"id": "mqtt-publisher",
 		"group": "MQTT",
-		"name": "MQTT Publish",
-		"url": "https://cdn.totaljs.com/flowstream/webcomponents/mqtt-publish.html",
-		"author": "Martin Smola",
+		"name": "MQTT Publisher",
+		"url": "https://albertocruzruiz.github.io/flow-components/components/mqtt-publisher.html",
+		"author": "Total.js | Alberto Cruz",
 		"icon": "ti ti-sign-out",
 		"color": "",
-		"version": "3",
+		"version": "1",
 		"kind": "",
-		"readme": "MQTT Publish\n\nInput:\n```javascript\n{\n\ttopic: 'some/topic',\n\tmessage: { some: 'data' },\n\t// optional\n\toptions: {\n\t\tqos: 0|1|2,\n\t\tretain: true|false\n\t}\n}\n```"
+		"readme": "MQTT Publisher\n\nInput:\n```javascript\n{\n\ttopic: 'some/topic',\n\tmessage: { some: 'data' },\n\t// optional\n\toptions: {\n\t\tqos: 0|1|2,\n\t\tretain: true|false\n\t}\n}\n```"
 	},
 	{
-		"id": "mqtt-subscribe",
+		"id": "mqtt-subscriber",
 		"group": "MQTT",
-		"name": "MQTT Subscribe",
-		"url": "https://cdn.totaljs.com/flowstream/webcomponents/mqtt-subscribe.html",
-		"author": "Martin Smola",
+		"name": "MQTT Subscriber",
+		"url": "https://albertocruzruiz.github.io/flow-components/components/mqtt-subscriber.html",
+		"author": "Total.js | Alberto Cruz",
 		"icon": "ti ti-sign-in",
 		"color": "",
-		"version": "3",
+		"version": "1",
 		"kind": "",
-		"readme": "MQTT Subscribe"
+		"readme": "MQTT Subscriber"
 	},
 	{
 		"id": "mysql",
@@ -709,25 +709,25 @@
 	},
 	{
 		"id": "print",
-		"group": "Common",
+		"group": "Data Logger",
 		"name": "Print",
-		"url": "https://cdn.totaljs.com/flowstream/webcomponents/print.html",
-		"author": "Total.js",
+		"url": "https://albertocruzruiz.github.io/flow-components/components/print.html",
+		"author": "Total.js | Alberto Cruz",
 		"icon": "ti ti-print",
 		"color": "",
-		"version": "5",
+		"version": "1",
 		"kind": "",
-		"readme": "The component prints incoming data in a JSON format."
+		"readme": "The component prints incoming data."
 	},
 	{
 		"id": "printjson",
-		"group": "Common",
+		"group": "Data Logger",
 		"name": "Print JSON",
-		"url": "https://cdn.totaljs.com/flowstream/webcomponents/printjson.html",
-		"author": "Martin Smola",
+		"url": "https://albertocruzruiz.github.io/flow-components/components/printjson.html",
+		"author": "Total.js | Alberto Cruz",
 		"icon": "ti ti-print",
 		"color": "",
-		"version": "2",
+		"version": "1",
 		"kind": "",
 		"readme": "The component prints incoming data in a JSON format."
 	},
