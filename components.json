@@ -852,14 +852,14 @@
 		"readme": "The component makes a HTTP request. The response data will be serialized as the payload.\n\n__Response__:\n\n```json\n{\n\tstatus: Number,\n\theaders: { key: value },\n\tcookies: { key: value },\n\thost: String,\n\tbody: String/Object/Buffer\n}\n```"
 	},
 	{
-		"id": "restresponse",
-		"group": "REST API",
+		"id": "response",
+		"group": "Rest API",
 		"name": "Response",
-		"url": "https://cdn.totaljs.com/flowstream/webcomponents/restresponse.html",
-		"author": "Total.js",
+		"url": "https://albertocruzruiz.github.io/flow-components/components/response.html",
+		"author": "Total.js | Alberto Cruz",
 		"icon": "ti ti-share",
 		"color": "",
-		"version": "3",
+		"version": "1",
 		"kind": "output",
 		"readme": "This component can respond on the REST Route component."
 	},
