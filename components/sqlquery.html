@@ -1,0 +1,129 @@
+<script total>
+
+exports.id = "sqlquery";
+exports.name = "SQL query";
+exports.icon = "ti ti-database";
+exports.author = "Total.js | Alberto Cruz";
+exports.group = "Databases";
+exports.version = "2";
+exports.flags = ["postgresqlclient-dep"];
+exports.config = {
+	id: "",
+	sql: "SELECT 1",
+	first: false,
+	path: ""
+};
+exports.inputs = [{ id: "input", name: "Input" }];
+exports.outputs = [
+	{ id: "output", name: "Output" },
+	{ id: "error", name: "Error" }
+];
+
+exports.make = (instance, config) => {
+	instance.message = ($) => {
+
+		const id = $.variables(config.id, true);
+		let sql = $.variables(config.sql, true, val =>
+			typeof val === "string" && val[0] === "!" ? val.substring(1) : PG_ESCAPE(val)
+		);
+
+		DATA.query(id, sql).callback((err, response) => {
+			if (err)
+				return $.send("error", err);
+
+			if (config.first)
+				response = response[0];
+
+			if (config.path) {
+				U.set($.data, config.path, response);
+				response = $.data;
+			}
+
+			$.send("output", response);
+		});
+	};
+};
+
+exports.call = function(_, answer) {
+	const clients = [];
+
+	for (const mod of this.instances()) {
+		if (mod.module.id === "postgresqlclient") {
+			const id = mod.config.id || mod.id;
+			const name = mod.state?.name || mod.name || id;
+			clients.push({ id, name: `${id} (${name})` });
+		}
+	}
+
+	answer(clients);
+};
+
+</script>
+
+<readme>
+The component executes a SQL command on the specified connection.
+This component depends on the "PostgreSQL Client" component.
+</readme>
+
+<script>
+ON("configure_sqlquery", function(data) {
+	data.call(function(response) {
+		SET("%postgresclients", response);
+	}, true);
+});
+</script>
+
+<settings>
+	<div class="padding">
+		<ui-component name="input" path="?.id" config="dirsource:%postgresclients;dirraw:1;placeholder:Select connection;dirempty:No connections;required:1;innerlabel:1;icon:ti ti-link" class="m">Connection</ui-component>
+		<div class="help">PostgreSQL client alias (configured in the PostgreSQL Client component)</div>
+
+		<ui-component name="input" path="?.path" config="innerlabel:1;placeholder:response;icon:ti ti-folder" class="m">Assign path</ui-component>
+		<div class="help">If not set, the query result replaces the entire message data</div>
+
+		<ui-component name="input" path="?.first" config="type:checkbox">Return only the first row</ui-component>
+
+		<hr />
+
+		<div class="ui-input-label">SQL query:</div>
+		<ui-component name="codemirror" path="?.sql" config="type:sql;minheight:300;parent:auto;margin:290;tabs:true;trim:true"></ui-component>
+	</div>
+</settings>
+
+<style>
+.CLASS footer {
+	padding: 10px;
+	font-size: 12px;
+}
+
+.f-sqlquery header {
+	background-color: #d3af80;
+	font-weight: bold;
+	border-radius: 8px 8px 0 0;
+}
+
+figure[data-id="sqlquery"] {
+	background-color: #d3af80;
+	font-weight: bold;
+}
+
+.ui-flow .component {
+	border-radius: 9px 9px 0 0;
+}
+
+.ui-flow .component-io {
+	width: 14px;
+	height: 14px;
+}
+</style>
+
+<body>
+	<header>
+		<i class="$ICON"></i>$NAME
+	</header>
+	<footer>
+		<ui-bind path="$CONFIG.id" config="text span;empty">
+			Database: <span class="b"></span>
+		</ui-bind>
+	</footer>
+</body>
