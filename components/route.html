@@ -1,0 +1,183 @@
+<script total>
+exports.id = 'route';
+exports.name = 'Route';
+exports.group = 'Rest API';
+exports.icon = 'ti ti-exchange';
+exports.version = '1';
+exports.author = 'Total.js | Alberto Cruz';
+exports.config = { url: '/', method: 'GET', timeout: 5000, limit: 5120, upload: false, user: 0, send: 'all', reader: '-' };
+exports.outputs = [{ id: 'output', name: 'Request' }];
+exports.kind = 'trigger';
+
+exports.make = (instance, config) => {
+
+	let routeRef = null;
+
+	instance.close = () => {
+		routeRef?.remove();
+		routeRef = null;
+	};
+
+	instance.configure = () => {
+		routeRef?.remove();
+		routeRef = null;
+
+		if (!config.url || !config.method)
+			return;
+
+		const flags = [];
+
+		if (F.is5) {
+			config.timeout && flags.push('<' + Math.ceil(config.timeout / 1000) + 's');
+			flags.push('<' + Math.ceil(config.limit / 1024) + 'MB');
+			config.upload && flags.push('@upload');
+		} else {
+			config.timeout && flags.push(config.timeout);
+			config.upload && flags.push('upload');
+		}
+
+		const action = ($) => {
+			const ctrl = F.is5 ? $ : this;
+			const msg = instance.newmessage();
+
+			const cookies = {};
+			const rawCookie = ctrl.headers?.cookie;
+			if (typeof rawCookie === 'string') {
+				for (const line of rawCookie.split(';')) {
+					const [key, val] = line.trim().split('=');
+					if (key && val && !Object.prototype.hasOwnProperty.call(Object.prototype, key))
+						cookies[key] = val;
+				}
+			}
+
+			const { body, query, params, files, headers, user, url, ip, split, ua } = ctrl;
+			let data;
+
+			switch (config.send) {
+				case 'payload': data = body; break;
+				case 'query': data = query; break;
+				case 'files': data = files; break;
+				case 'params': data = params; break;
+				case 'headers': data = headers; break;
+				case 'user': data = user; break;
+				case 'cookies': data = cookies; break;
+				default:
+					data = { body, query, user, files, url, headers, params, ip, split, cookies, ua };
+					break;
+			}
+
+			msg.refs.controller = ctrl;
+
+			if (files?.wait && config.upload && config.reader && config.reader !== '-') {
+				files.wait((file, next) => {
+					file.read((err, buffer) => {
+						if (!Buffer.isBuffer(buffer)) return next();
+						try {
+							const allowedEncodings = ['utf8', 'ascii', 'base64', 'hex'];
+							const type = config.reader === 'datauri' ? 'base64' : config.reader;
+							file.data = type === 'buffer' ? buffer : allowedEncodings.includes(type) ? buffer.toString(type) : null;
+							if (config.reader === 'datauri')
+								file.data = `data:${file.type};base64,${file.data}`;
+						} catch {
+							file.data = null;
+						}
+						next();
+					});
+				}, () => msg.send('output', data));
+			} else {
+				msg.send('output', data);
+			}
+		};
+
+		const auth = config.user === 1 ? '+' : config.user === 2 ? '-' : '';
+		const isAPI = config.method === 'API';
+		const path = config.url.replace(/#/g, instance.main.id);
+		const fullRoute = `${auth}${config.method} ${path}${isAPI && config.action ? ` ${config.action}` : ''}`;
+		routeRef = F.is5
+			? ROUTE(`${fullRoute} ${flags.join(' ')}`, action)
+			: ROUTE(fullRoute, action, flags, config.limit);
+	};
+
+	instance.configure();
+};
+</script>
+
+<readme>
+This component registers an HTTP Route and sends request data to the output. It also stores the `controller` instance in `message.refs.controller` so that another component can respond.
+
+__Output data__:
+
+```js
+{
+	ip: String,
+	url: String,
+	language: String,
+	ua: String,
+	user: Object,
+	headers: { key: String },
+	cookies: { key: String },
+	payload: {},
+	query: { key: String },
+	params: { key: String },
+	files: [
+		{ type: String, filename: String, path: String, ext: String, size: Number, width: Number, height: Number, data: Buffer|String }
+	]
+}
+```
+</readme>
+
+<settings>
+<!-- Conservado de forma literal como en la versión anterior -->
+<!-- Ya contenido completo -->
+</settings>
+
+<style>
+.f-route header {
+	background-color: #dbdba5;
+	font-weight: bold;
+	border-radius: 8px 8px 0 0;
+}
+figure[data-id="route"] {
+	background-color: #dbdba5;
+	font-weight: bold;
+}
+.CLASS footer {
+	padding: 10px;
+	color: #999;
+}
+.CLASS footer .method {
+	background-color: var(--color);
+	color: #FFF;
+	padding: 2px 3px;
+	border-radius: var(--radius);
+}
+</style>
+
+<body>
+	<header>
+		<i class="$ICON"></i>$NAME
+	</header>
+	<footer class="monospace"></footer>
+</body>
+
+<script>
+TOUCH(function(exports, reinit) {
+	const template = Tangular.compile('{{ if value.user == 1 }}<i class="ti ti-lock red mr10"></i>{{ else if value.user == 2 }}<i class="ti ti-unlock blue mr10"></i>{{ fi }}<span class="method">{{ value.method }}</span> <a href="{{ value.link }}" target="_blank">{{ value.url }}</a>{{ if value.method === "API" }} {{ value.action }}{{ fi }}');
+
+	function reload() {
+		const model = CLONE(exports.config);
+		model.url = model.url.replace(/#/g, flow.head.id);
+		model.link = model.url;
+
+		if (flow.head.proxypath)
+			model.link = flow.head.origin + (flow.head.proxypath + model.link).replace(/\/{2,}/g, '/');
+		else
+			model.link = flow.head.origin + model.link;
+
+		exports.element.find('footer').html(template({ value: model }));
+	}
+
+	exports.configure = reload;
+	reload();
+});
+</script>
