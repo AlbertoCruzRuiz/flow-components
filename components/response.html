@@ -11,8 +11,7 @@ exports.outputs = [{ id: 'output', name: 'Log' }];
 exports.kind = 'output';
 
 exports.make = (instance, config) => {
-
-	let nested = config.path?.includes('.') || false;
+	const nested = config.path?.includes('.') || false;
 
 	const setStatus = (ctrl, code) => {
 		if (!ctrl.responsed)
@@ -26,14 +25,11 @@ exports.make = (instance, config) => {
 
 		let value = config.path ? (nested ? U.get($.data, config.path) : $.data[config.path]) : $.data;
 
-		// Auto-adjust empty JSON
 		if (value == null && config.type === 'json')
 			value = {};
 
-		// Apply custom status code
 		setStatus(ctrl, config.code);
 
-		// Avoid multiple responses per controller
 		if (ctrl.responsed)
 			return;
 
@@ -80,56 +76,54 @@ This component can respond to an HTTP request based on the selected output type.
 </readme>
 
 <settings>
-	<div class="padding">
-		<div class="grid-3">
-			<div class="m">
-				<ui-component name="input" path="?.type" config="required:1;dirsource:auto|Auto,json|JSON,success|Success,error|Error,empty|Empty response,plain|Plain text,html|HTML,xml|XML,buffer|Buffer">Type</ui-component>
-			</div>
-			<ui-bind path="?.type" config="disabled:value === 'auto'" class="m block">
-				<ui-component name="input" path="?.code" config="required:1;type:number;format:">Status code</ui-component>
-			</ui-bind>
-			<div class="m">
-				<ui-component name="input" path="?.path" config="monospace:1;align:1">Path for reading value</ui-component>
-			</div>
+<div class="padding">
+	<div class="grid-3">
+		<div class="m">
+			<ui-component name="input" path="?.type" config="required:1;dirsource:auto|Auto,json|JSON,success|Success,error|Error,empty|Empty response,plain|Plain text,html|HTML,xml|XML,buffer|Buffer">Type</ui-component>
 		</div>
-		<ui-bind path="?.type" config="show:value==='buffer'" class="m block hidden">
-			<div class="padding bg-smoke radius">
-				<ui-component name="input" path="?.ctype" config="required:1;placeholder:text/html">Content type</ui-component>
-			</div>
+		<ui-bind path="?.type" config="disabled:value === 'auto'" class="m block">
+			<ui-component name="input" path="?.code" config="required:1;type:number;format:">Status code</ui-component>
 		</ui-bind>
+		<div class="m">
+			<ui-component name="input" path="?.path" config="monospace:1;align:1">Path for reading value</ui-component>
+		</div>
 	</div>
+	<ui-bind path="?.type" config="show:value==='buffer'" class="m block hidden">
+		<div class="padding bg-smoke radius">
+			<ui-component name="input" path="?.ctype" config="required:1;placeholder:text/html">Content type</ui-component>
+		</div>
+	</ui-bind>
+</div>
 </settings>
 
 <style>
-	.CLASS header { padding: 6px !important; }
-	.CLASS header ui-bind { font-family: var(--monospace); color: #FFF; margin-left: 4px; font-size: 12px; }
-	.CLASS header ui-bind code { border-radius: var(--radius) 0 0 var(--radius); padding: 2px 3px; }
-	.CLASS header ui-bind span { background-color: gray; border-radius: 0 var(--radius) var(--radius) 0; padding: 2px 3px; }
-	.f-response header { background-color: #dbdba5; font-weight: bold; border-radius: 8px 8px 0 0 }
-	figure[data-id="response"] { background-color: #dbdba5; font-weight: bold }
-	.ui-flow .component { border-radius: 9px 9px 0 0 }
-	.ui-flow .component-io { width: 14px; height: 14px }
+.CLASS header { padding: 6px !important; }
+.CLASS header ui-bind { font-family: var(--monospace); color: #FFF; margin-left: 4px; font-size: 12px; }
+.CLASS header ui-bind code { border-radius: var(--radius) 0 0 var(--radius); padding: 2px 3px; }
+.CLASS header ui-bind span { background-color: gray; border-radius: 0 var(--radius) var(--radius) 0; padding: 2px 3px; }
+.f-response header { background-color: #dbdba5; font-weight: bold; border-radius: 8px 8px 0 0 }
+figure[data-id="response"] { background-color: #dbdba5; font-weight: bold }
+.ui-flow .component { border-radius: 9px 9px 0 0 }
+.ui-flow .component-io { width: 14px; height: 14px }
 </style>
 
 <body>
-	<header>
-		<i class="ICON"></i>NAME
-		<ui-bind path="CONFIG" config="template">
-			<script type="text/html">
-				<code style="background:{{ if value.code >= 400 }}#E73323{{ else }}#4285F4{{ fi }}">{{ value.code }}</code><span>{{ value.type }}</span>
-			</script>
-		</ui-bind>
-	</header>
+<header>
+	<i class="ICON"></i>NAME
+	<ui-bind path="CONFIG" config="template">
+		<script type="text/html">
+			<code style="background:{{ if value.code >= 400 }}#E73323{{ else }}#4285F4{{ fi }}">{{ value.code }}</code><span>{{ value.type }}</span>
+		</script>
+	</ui-bind>
+</header>
 </body>
 
 <script>
 TOUCH(function(exports) {
 	const template = Tangular.compile('<code style="background:{{ if value.code >= 400 }}#E73323{{ else }}#4285F4{{ fi }}">{{ value.code }}</code><span>{{ value.type }}</span>');
-
 	function render() {
 		exports.element.find('ui-bind').html(template({ value: exports.config }));
 	}
-
 	exports.configure = render;
 	render();
 });
