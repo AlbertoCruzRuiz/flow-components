@@ -84,14 +84,14 @@
 		"readme": "This component prints a message into the console."
 	},
 	{
-		"id": "restcors",
-		"group": "REST API",
+		"id": "cors",
+		"group": "Rest API",
 		"name": "CORS",
-		"url": "https://cdn.totaljs.com/flowstream/webcomponents/restcors.html",
-		"author": "Total.js",
+		"url": "https://albertocruzruiz.github.io/flow-components/components/cors.html",
+		"author": "Total.js | Alberto Cruz",
 		"icon": "ti ti-html5",
 		"color": "",
-		"version": "3",
+		"version": "1",
 		"kind": "",
 		"readme": "The component enables Cross-Origin Resource Sharing `CORS`, so the web browser will be able to communicate directly with the REST API. The functionality will work only with a defined Proxy endpoint for this Flow."
 	},
