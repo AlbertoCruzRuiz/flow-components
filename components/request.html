@@ -1,0 +1,277 @@
+<script total>
+exports.id = 'request';
+exports.name = 'HTTP Request';
+exports.group = 'Rest API';
+exports.version = '1';
+exports.icon = 'ti ti-cloud-download';
+exports.author = 'Total.js | Alberto Cruz';
+
+exports.config = {
+	url: '',
+	method: 'GET',
+	dnscache: true,
+	insecure: false,
+	secret: '',
+	nocookies: true,
+	xhr: false,
+	parse: true,
+	timeout: 10000,
+	limit: 524288,
+	responsebody: true,
+	headers: [],
+	cookies: [],
+	serialize: null,
+	send: 'all'
+};
+
+exports.inputs = [{ id: 'payload', name: 'Input: Payload' }];
+exports.outputs = [
+	{ id: 'response', name: 'Output: Response' },
+	{ id: 'error', name: 'Error' }
+];
+
+exports.make = function(instance, config) {
+	const parseValue = (input, $, def) => input ? $.variables(input, true) : def;
+
+	instance.trigger = () => instance.message(instance.newmessage({}));
+
+	instance.message = function($) {
+		const method = parseValue(config.method, $, 'GET').toUpperCase();
+		const url = parseValue(config.url, $, '');
+
+		if (!url)
+			return $.send('error', 'URL is not defined');
+
+		const allowed = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
+		if (!allowed.includes(method))
+			return $.send('error', `Invalid HTTP method: ${method}`);
+
+		const opt = {
+			method,
+			url,
+			cook: true,
+			dnscache: config.dnscache,
+			insecure: config.insecure,
+			nocookies: config.nocookies,
+			xhr: config.xhr,
+			timeout: config.timeout,
+			limit: config.limit,
+			headers: {},
+			cookies: {}
+		};
+
+		const secret = parseValue(config.secret, $, null);
+		const mapPairs = (list) => list?.reduce((obj, pair) => {
+			if (pair.key) obj[parseValue(pair.key, $, '')] = parseValue(pair.value, $, '');
+			return obj;
+		}, {}) || {};
+
+		opt.headers = mapPairs(config.headers);
+		opt.cookies = mapPairs(config.cookies);
+
+		if (config.serialize) {
+			switch (config.serialize) {
+				case 'json':
+					opt.type = 'json';
+					if (method !== 'GET') opt.body = JSON.stringify($.data);
+					break;
+				case 'urlencoded':
+					opt.type = 'urlencoded';
+					opt[method === 'GET' ? 'query' : 'body'] = U.toURLEncode($.data);
+					break;
+				case 'buffer':
+					opt.type = 'raw';
+					opt.body = $.data;
+					break;
+			}
+
+			if (!opt.headers['Content-Type']) {
+				switch (config.serialize) {
+					case 'json':
+						opt.headers['Content-Type'] = 'application/json';
+						break;
+					case 'urlencoded':
+						opt.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+						break;
+				}
+			}
+		}
+
+		if (secret && opt.body) {
+			opt.body = U.encrypt_data(opt.body, secret);
+			opt.headers['X-Encryption'] = 'a';
+		}
+
+		if (!opt.headers['Accept'] && config.parse)
+			opt.headers['Accept'] = 'application/json, text/plain, */*';
+
+		opt.headers['Accept-Encoding'] = 'gzip, deflate, br';
+
+		if (config.send === 'chunks')
+			opt.custom = true;
+
+		opt.callback = function(err, response) {
+			if (err)
+				return $.send('error', err.toString());
+
+			if (opt.custom)
+				return response.stream.on('data', d => $.send('response', d));
+
+			if (config.send === 'headers')
+				return $.send('response', response.headers);
+
+			if (config.send === 'status')
+				return $.send('response', response.status);
+
+			let body = response.body;
+			if (secret && response.headers['x-encryption'])
+				body = U.decrypt_data(body, secret);
+
+			if (config.parse && typeof body === 'string') {
+				const type = (response.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+				switch (type) {
+					case 'text/xml':
+					case 'application/xml':
+						body = body.parseXML(true);
+						break;
+					case 'application/x-www-form-urlencoded':
+						body = DEF.parsers.urlencoded(body);
+						break;
+					case 'application/json':
+					case 'text/json':
+						body = body.parseJSON(true);
+						break;
+					default:
+						if (body.isJSON())
+							body = body.parseJSON(true);
+						break;
+				}
+			}
+
+			$.send('response', config.send === 'all' ? {
+				headers: response.headers,
+				cookies: response.cookies,
+				status: response.status,
+				host: response.host,
+				body
+			} : body);
+		};
+
+		REQUEST(opt);
+	};
+};
+</script>
+
+<readme>
+The component makes an HTTP request. The response will be processed and emitted based on configuration.
+
+__Dynamic Variables__:
+- You can use `{key}`, `{data.key}` or `{variables.key}` anywhere in the config fields.
+
+__Request Payload Example__:
+```json
+{
+  "method": "POST",
+  "url": "https://api.example.com/user/{data.userid}/profile",
+  "userid": "1234",
+  "username": "john.doe",
+  "email": "john@example.com",
+  "headers": [
+    { "key": "Authorization", "value": "Bearer 121212" },
+    { "key": "Content-Type", "value": "application/json" }
+  ],
+  "cookies": [
+    { "key": "sessionid", "value": "123456" }
+  ]
+}
+```
+
+__Response Example__:
+```json
+{
+  "status": 200,
+  "headers": { "Content-Type": "application/json" },
+  "cookies": { "session": "abc123" },
+  "host": "example.com",
+  "body": { "data": "..." }
+}
+```
+
+__Options Explained__:
+- `nocookies`: Prevents automatic cookie handling.
+- `xhr`: Adds `X-Requested-With: XMLHttpRequest` header.
+- `insecure`: Allows unverified HTTPS (e.g. self-signed certs).
+- `parse`: Attempts to parse JSON/XML/URLEncoded response bodies.
+</readme>
+
+<body>
+<header class="f-request"><i class="ICON"></i>NAME</header>
+<ui-bind path="CONFIG" config="template;show:value.url" class="block status">
+	<script type="text/html">
+		<div class="monospace hellip" title="{{ value.url }}">
+			<span style="background:{{ value.method | color }}">{{ value.method }}</span> {{ value.url }}
+		</div>
+	</script>
+</ui-bind>
+</body>
+
+<settings>
+<div class="padding">
+	<div class="message message-alert">Method, URL address, headers and Cookies support dynamic variables. Variables are read from global Variables <code class="b">{key}</code> and from the message data <code class="b">{data.key}</code></div>
+</div>
+<div class="padding bg-smoke npb">
+	<div class="row">
+		<div class="col-md-3 m">
+			<ui-component name="input" path="?.method" config="dirsource:GET|GET,POST|POST,PUT|PUT,DELETE|DELETE,PATCH|PATCH;required:1">Method</ui-component>
+		</div>
+		<div class="col-md-9 m">
+			<ui-component name="input" path="?.url" config="required:1"><b>URL address</b></ui-component>
+		</div>
+	</div>
+</div>
+<div class="padding">
+	<div class="row">
+		<div class="col-md-3 m">
+			<ui-component name="input" path="?.timeout" config="type:number">Timeout</ui-component>
+			<div class="help"><i class="ti ti-clock"></i> <ui-bind path="?.timeout" config="text:((value||0)/1000).floor(2)+' sec.'"></ui-bind><br />Timeout <b>in milliseconds</b></div>
+		</div>
+		<div class="col-md-3 m">
+			<ui-component name="input" path="?.limit" config="type:number">Max. size</ui-component>
+			<div class="help"><i class="ti ti-calculator"></i> <ui-bind path="?.limit" config="text:(value||0).filesize()"></ui-bind><br />Response max. size <b>in bytes</b></div>
+		</div>
+		<div class="col-md-6 m">
+			<ui-component name="input" path="?.send" config="required:1;dirsource:all|Everything,response|Response body,chunks|Chunks of buffer,headers|Headers only,status|Status code">Send to output</ui-component>
+		</div>
+	</div>
+</div>
+<hr class="nmt nmb" />
+<div class="padding">
+	<ui-component name="input" path="?.serialize" config="dirsource:json|JSON,urlencoded|URL encode,buffer|Buffer;dirraw:1;placeholder:None;dirempty:None" class="m">Data serialization</ui-component>
+	<ui-component name="keyvalue" path="?.headers" config="placeholderkey:Header name;placeholdervalue:Header value;multiple:1">Headers</ui-component>
+	<ui-component name="keyvalue" path="?.cookies" config="placeholderkey:Cookie name;placeholdervalue:Cookie value;multiple:1">Cookies</ui-component>
+	<hr />
+	<ui-component name="input" path="?.parse" config="type:checkbox">Parse response</ui-component>
+	<ui-component name="input" path="?.dnscache" config="type:checkbox">Enable DNS cache</ui-component>
+	<ui-component name="input" path="?.insecure" config="type:checkbox">Allow insecure connection</ui-component>
+	<ui-component name="input" path="?.xhr" config="type:checkbox">Add XHR header</ui-component>
+	<hr />
+	<ui-component name="input" path="?.secret" config="camouflage:1;icon:ti ti-totaljs">Encryption secret</ui-component>
+</div>
+</settings>
+
+<style>
+.CLASS .status { font-size: 12px; margin: 0; padding: 5px 10px 10px; }
+.CLASS .status span { padding: 1px 3px; border-radius: var(--radius); color: #FFF; }
+.f-request header { background-color: #dbdba5; font-weight: bold; border-radius: 8px 8px 0 0 }
+figure[data-id="request"] { background-color: #dbdba5; font-weight: bold }
+.ui-flow .component { border-radius: 9px 9px 0 0 }
+.ui-flow .component-io { width: 14px; height: 14px }
+</style>
+
+<script>
+TOUCH(exports => {
+	const template = Tangular.compile('<div class="monospace hellip" title="{{ value.url }}"><span style="background:{{ value.method | color }}">{{ value.method }}</span> {{ value.url }}</div>');
+	exports.configure = () => exports.element.find('ui-bind').html(template({ value: exports.config }));
+	exports.configure();
+});
+</script>
