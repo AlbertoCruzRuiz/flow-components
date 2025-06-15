@@ -93,19 +93,15 @@ exports.make = function (instance, config) {
     border-radius: 8px 8px 0 0;
 }
 
+.f-trigger footer {
+	background-color: #dad5eb;
+}
+
 figure[data-id="trigger"] {
     background-color: #dad5eb;
     font-weight: bold;
 }
 
-.ui-flow .component {
-    border-radius: 9px 9px 0 0;
-}
-
-.ui-flow .component-io {
-    width: 14px;
-    height: 14px;
-}
 </style>
 
 <settings>
@@ -159,6 +155,9 @@ El componente introduce datos en el Flujo cada vez que se pulsa RUN.
 <div class="padding mt20">
     <button name="run">Run</button>
 </div>
+<footer>
+	<b>Triggers</b>
+</footer>
 </body>
 
 <script>
