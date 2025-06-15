@@ -57,25 +57,15 @@ MQTT Subscriber
 </readme>
 
 <style>
-.CLASS footer { padding: 10px; font-size: 11px; }
-.CLASS footer > ui-bind > div { height: 16px; }
-.CLASS footer b { float: right; margin-left: 12px; }
-
 .f-mqttsubscriber header {
 	background-color: #cdb5cd;
-	font-weight: bold;
-	border-radius: 8px 8px 0 0;
+}
+.f-mqttsubscriber footer {
+	background-color: #cdb5cd;
 }
 figure[data-id="mqttsubscriber"] {
 	background-color: #cdb5cd;
 	font-weight: bold;
-}
-.ui-flow .component {
-	border-radius: 9px 9px 0 0;
-}
-.ui-flow .component-io {
-	width: 14px;
-	height: 14px;
 }
 </style>
 
@@ -113,12 +103,16 @@ ON("configure_mqttsubscriber", function (data) {
 <header>
 	<i class="ICON"></i>NAME
 </header>
+
+<div class="component-body">
+<ui-bind path="!STATUS" config="template;show">
+	<script type="text/html">
+		<div>Topic: <b>{{ value.topic }}</b></div>
+	</script>
+</ui-bind>
+</div>
+
 <footer>
-	<ui-bind path="!STATUS" config="template;show">
-		<script type="text/html">
-			<div><b>{{ value.status }}</b>Status</div>
-			<div><b>{{ value.topic }}</b>Topic</div>
-		</script>
-	</ui-bind>
+	<b>MQTT</b>
 </footer>
 </body>
