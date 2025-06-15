@@ -54,32 +54,15 @@ Input:
 </readme>
 
 <style>
-.CLASS footer {
-	padding: 10px;
-	font-size: 11px;
-}
-.CLASS footer > ui-bind > div {
-	height: 16px;
-}
-.CLASS footer b {
-	float: right;
-}
-
 .f-mqttpublisher header {
 	background-color: #cdb5cd;
-	font-weight: bold;
-	border-radius: 8px 8px 0 0;
+}
+.f-mqttpublisher footer {
+	background-color: #cdb5cd;
 }
 figure[data-id="mqttpublisher"] {
 	background-color: #cdb5cd;
 	font-weight: bold;
-}
-.ui-flow .component {
-	border-radius: 9px 9px 0 0;
-}
-.ui-flow .component-io {
-	width: 14px;
-	height: 14px;
 }
 </style>
 
@@ -104,10 +87,6 @@ ON("configure_mqttpublisher", function (data) {
 	<i class="ICON"></i>NAME
 </header>
 <footer>
-	<ui-bind path="!STATUS" config="template;show" class="block">
-		<script type="text/html">
-			<div><b>{{ value }}</b>Status</div>
-		</script>
-	</ui-bind>
+	<b>MQTT</b>
 </footer>
 </body>
