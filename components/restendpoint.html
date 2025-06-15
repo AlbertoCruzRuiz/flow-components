@@ -1,8 +1,8 @@
 <script total>
-exports.id = 'route';
-exports.name = 'Route';
+exports.id = 'restendpoint';
+exports.name = 'End Point';
 exports.group = 'Rest API';
-exports.icon = 'ti ti-exchange';
+exports.icon = 'ti ti-door';
 exports.version = '1';
 exports.author = 'Total.js | Alberto Cruz';
 exports.config = { url: '/', method: 'GET', timeout: 5000, limit: 5120, upload: false, user: 0, send: 'all', reader: '-' };
@@ -127,37 +127,96 @@ __Output data__:
 </readme>
 
 <settings>
-<!-- Conservado de forma literal como en la versión anterior -->
-<!-- Ya contenido completo -->
+	<div class="padding">
+		<ui-bind path="flow.head.worker" config="hide:!value || flow.head.origin.length < flow.head.proxyurl.length" class="block">
+			<div class="message message-error"><b><i class="ti ti-warning"></i>No proxy endpoint defined.</b><br>This component will not work until then. Please go to main screen, open settings of this FlowStream instance and set the Endpoint.</div>
+		</ui-bind>
+		<div class="row">
+			<div class="col-md-3 m">
+				<ui-component name="input" path="?.method" config="required:1;dirsource:GET|GET,POST|POST,PUT|PUT,PATCH|PATCH,DELETE|DELETE,API|API">Method</ui-component>
+				<div class="help">HTTP method</div>
+			</div>
+			<div class="col-md-9 m">
+				<ui-component name="input" path="?.url" config="monospace:1;required:1">Relative URL address</ui-component>
+				<div class="help">A relative path to: <ui-bind path="flow.head.proxyurl" config="text:value?value:window.location.origin"></ui-bind><br />It supports wildcard <code>/something/*</code> or dynamic arguments <code>/products/{category}/</code>.<br /><code>#</code> will be replaced with a FlowStream <code>id</code> identifier.</div>
+			</div>
+		</div>
+
+		<hr class="nmt" />
+
+		<ui-bind path="?.method" config="show:value === 'API'" class="block hidden m padding bg-smoke radius">
+			<ui-component name="input" path="?.action" config="monospace:1;required:1;placeholder:+users_read/{id}">API Action</ui-component>
+		</ui-bind>
+
+		<ui-component name="input" path="?.upload" config="type:checkbox" class="m"><b>Allow uploading files (form data)</b></ui-component>
+		<ui-bind path="?.upload" config="enabled">
+			<ui-component name="input" path="?.reader" config="dirsource:-|Keep as files,buffer|Buffer,utf8|UTF-8,ascii|ASCII,datauri|Data URI,base64|Base64,hex|Hex">Read files to</ui-component>
+		</ui-bind>
+		<hr />
+
+		<div class="ui-input-label mt10">Continue as:</div>
+		<ui-component name="choose" path="?.user" config="selector:div;type:number" class="iconmenu m">
+			<div data-id="1" style="width:90px">
+				<i class="ti ti-lock"></i>
+				<span>Authorized</span>
+			</div>
+			<div data-id="2" style="width:90px">
+				<i class="ti ti-unlock"></i>
+				<span>Unauthorized</span>
+			</div>
+			<div data-id="0" style="width:90px">
+				<i class="ti ti-door-open"></i>
+				<span>Both</span>
+			</div>
+		</ui-component>
+
+		<div class="grid-3">
+			<div class="m">
+				<ui-component name="input" path="?.timeout" config="required:1;type:number;format:">Timeout</ui-component>
+			</div>
+			<div class="m">
+				<ui-component name="input" path="?.limit" config="required:1;type:number;ricon:!kB;align:1;format:">Request limit</ui-component>
+			</div>
+			<div class="m">
+				<ui-component name="input" path="?.send" config="required:1;dirsource:all|Everything,payload|Payload,query|Query arguments,files|Files,params|Dynamic params,headers|Headers,cookies|Cookies,user|User">Send to output</ui-component>
+			</div>
+		</div>
+	</div>
 </settings>
 
 <style>
-.f-route header {
-	background-color: #dbdba5;
-	font-weight: bold;
-	border-radius: 8px 8px 0 0;
-}
-figure[data-id="route"] {
-	background-color: #dbdba5;
-	font-weight: bold;
-}
-.CLASS footer {
-	padding: 10px;
-	color: #999;
-}
-.CLASS footer .method {
+.CLASS .method {
 	background-color: var(--color);
-	color: #FFF;
-	padding: 2px 3px;
+	color: white;
+	padding: 2px 4px;
 	border-radius: var(--radius);
+	font-size: 11px;
+}
+.CLASS .endpoint-info {
+	font-size: 13px;
+	line-height: 1.4;
+	margin: 5px 10px;
+}
+
+.CLASS header { background-color: #dbdba5; }
+.CLASS footer { background-color: #dbdba5; }
+figure[data-id="restendpoint"] {
+	background-color: #dbdba5;
+	font-weight: bold;
 }
 </style>
 
 <body>
 	<header>
-		<i class="$ICON"></i>$NAME
+		<i class="$ICON"></i>$NAME&nbsp;
+		<button class="exec button" data-exec="FUNC.trigger()">Copy URL</button>
 	</header>
-	<footer class="monospace"></footer>
+	<div class="component-body">
+		<div id="endpoint-info" class="endpoint-info"></div>
+	</div>
+	<footer>
+		<b>Rest API</b>
+	</footer>
 </body>
 
 <script>
@@ -174,10 +233,19 @@ TOUCH(function(exports, reinit) {
 		else
 			model.link = flow.head.origin + model.link;
 
-		exports.element.find('footer').html(template({ value: model }));
+		exports.link = model.link;
+		exports.element.find('#endpoint-info').html(template({ value: model }));
 	}
-
 	exports.configure = reload;
 	reload();
 });
+
+FUNC.trigger = function() {
+	const link = document.querySelector('#endpoint-info a')?.href;
+	if (link) {
+		navigator.clipboard.writeText(link).catch(() => {});
+	} else {
+		console.warn('No se encontró ninguna URL para copiar.');
+	}
+};
 </script>
