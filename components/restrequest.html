@@ -1,9 +1,9 @@
 <script total>
-exports.id = 'request';
+exports.id = 'restrequest';
 exports.name = 'HTTP Request';
 exports.group = 'Rest API';
 exports.version = '1';
-exports.icon = 'ti ti-cloud-download';
+exports.icon = 'ti ti-globe-world';
 exports.author = 'Total.js | Alberto Cruz';
 
 exports.config = {
@@ -213,6 +213,9 @@ __Options Explained__:
 		</div>
 	</script>
 </ui-bind>
+<footer>
+	<b>Rest API</b>
+</footer>
 </body>
 
 <settings>
@@ -262,10 +265,9 @@ __Options Explained__:
 <style>
 .CLASS .status { font-size: 12px; margin: 0; padding: 5px 10px 10px; }
 .CLASS .status span { padding: 1px 3px; border-radius: var(--radius); color: #FFF; }
-.f-request header { background-color: #dbdba5; font-weight: bold; border-radius: 8px 8px 0 0 }
-figure[data-id="request"] { background-color: #dbdba5; font-weight: bold }
-.ui-flow .component { border-radius: 9px 9px 0 0 }
-.ui-flow .component-io { width: 14px; height: 14px }
+.CLASS header { background-color: #dbdba5; }
+.CLASS footer { background-color: #dbdba5; }
+figure[data-id="restrequest"] { background-color: #dbdba5; font-weight: bold }
 </style>
 
 <script>
