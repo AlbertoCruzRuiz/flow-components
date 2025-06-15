@@ -170,32 +170,15 @@ This component connects to an MQTT broker and emits received messages.
 </readme>
 
 <style>
-.CLASS footer {
-	padding: 10px;
-	font-size: 11px;
-}
-.CLASS footer > ui-bind > div {
-	height: 16px;
-}
-.CLASS footer b {
-	float: right;
-}
-
 .f-mqttclient header {
 	background-color: #cdb5cd;
-	font-weight: bold;
-	border-radius: 8px 8px 0 0;
+}
+.f-mqttclient footer {
+	background-color: #cdb5cd;
 }
 figure[data-id="mqttclient"] {
 	background-color: #cdb5cd;
 	font-weight: bold;
-}
-.ui-flow .component {
-	border-radius: 9px 9px 0 0;
-}
-.ui-flow .component-io {
-	width: 14px;
-	height: 14px;
 }
 </style>
 
@@ -251,12 +234,17 @@ figure[data-id="mqttclient"] {
 <header>
 	<i class="ICON"></i>NAME
 </header>
-<footer>
+
+<div class="component-body">
 	<ui-bind path="!STATUS" config="template;show" class="block">
 		<script type="text/html">
-			<div><b>{{ value.name }}</b> Name</div>
-			<div><b>{{ value.status }}</b> Status</div>
+			<div>Name: <b>{{ value.name }}</b></div>
+			<div>Status: <b>{{ value.status }}</b></div>
 		</script>
 	</ui-bind>
+</div>
+
+<footer>
+	<b>MQTT</b>
 </footer>
 </body>
