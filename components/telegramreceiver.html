@@ -1,0 +1,172 @@
+<script total>
+
+exports.id = 'telegramreceiver';
+exports.name = 'Receiver';
+exports.group = 'Telegram';
+exports.icon = 'ti ti-send';
+exports.author = 'Total.js | Alberto Cruz';
+exports.version = '1';
+exports.config = { token: '', bots: true, commands: [] };
+exports.outputs = [
+	{ id: 'message', name: 'Message' },
+	{ id: 'unconfigured_command', name: 'Unconfigured Command' },
+	{ id: 'error', name: 'Error' }
+];
+exports.meta = { settingswidth: 800, display: true };
+
+exports.make = function(instance, config) {
+	const API = 'https://api.telegram.org/';
+	let token;
+
+	function update_outputs() {
+		config.commands = config.commands
+			.filter(Boolean)
+			.map(v => v.trim().toLowerCase().replace(/^\//, ''))
+			.filter((v, i, self) => self.indexOf(v) === i) // Elimina duplicados
+			.sort();
+
+		const dynamic = config.commands.map(cmd => ({ id: cmd, name: '/' + cmd }));
+		const outputs = [
+			{ id: 'message', name: 'Message' },
+			...dynamic,
+			{ id: 'unconfigured_command', name: 'Unconfigured Command' },
+			{ id: 'error', name: 'Error' }
+		];
+
+		if (JSON.stringify(instance.outputs) !== JSON.stringify(outputs)) {
+			instance.outputs = outputs;
+			instance.save();
+			instance.flow?.refresh();
+		}
+	}
+
+	function create_payload(msg) {
+		const user = msg.from;
+		const chat = msg.chat;
+		const reply = msg.reply_to_message;
+		const text = (msg.text || msg.caption || '').trim();
+
+		const payload = {
+			id: msg.message_id,
+			userid: user.id,
+			user: (user.first_name || 'Unknown') + (user.last_name ? ' ' + user.last_name : ''),
+			bot: user.is_bot,
+			nick: user.username,
+			language: user.language_code,
+			ispremium: user.is_premium,
+			date: new Date(msg.date * 1000).toISOString(),
+			chatid: chat.id,
+			chat: [chat.title, chat.username].filter(Boolean).join(' / ') || chat.id,
+			type: chat.type,
+			text,
+			edited: msg.edit_date ? new Date(msg.edit_date * 1000).toISOString() : undefined
+		};
+
+		const entities = msg.entities || msg.caption_entities;
+		if (Array.isArray(entities)) {
+			payload.commands = {};
+			for (const ent of entities) {
+				if (ent.offset != null && ent.length && text.length >= ent.offset + ent.length)
+					payload.commands[text.substring(ent.offset + 1, ent.offset + ent.length).toLowerCase()] = ent.type;
+			}
+		}
+
+		if (reply) {
+			payload.reply = {
+				id: reply.message_id,
+				userid: reply.from.id,
+				user: (reply.from.first_name || 'Unknown') + (reply.from.last_name ? ' ' + reply.from.last_name : ''),
+				nick: reply.from.username,
+				bot: reply.from.is_bot,
+				date: new Date(reply.date * 1000).toISOString(),
+				text: reply.text || reply.caption
+			};
+		}
+
+		return payload;
+	}
+
+	instance.notify = function(data) {
+		const msg = (data.body || {}).message || data.body.edited_message;
+		if (!msg || !(msg.text || msg.caption) || (!config.bots && msg.from?.is_bot)) return;
+
+		const obj = create_payload(msg);
+		const message = instance.newmessage(obj);
+		message.refs.telegram = { token: config.token.trim(), chatid: obj.chatid, replyid: obj.id };
+
+		if (obj.commands) {
+			const cmd = Object.keys(obj.commands).find(cmd => config.commands.includes(cmd));
+			message.send(cmd || 'unconfigured_command');
+		} else {
+			message.send('message');
+		}
+	};
+
+	instance.configure = function() {
+		token = config.token.trim();
+		const hook = `${instance.main.origin}/notify/${instance.main.id}-${instance.id}/`;
+		const payload = { url: hook, drop_pending_updates: true };
+
+		RESTBuilder.POST(`${API}bot${token}/setWebhook`, payload).exec(function(err, res) {
+			if (err || !res?.ok) {
+				instance.send('error', {
+					code: res?.error_code || err?.response?.error_code || 500,
+					description: res?.description || err?.response?.description || err?.message || 'Unknown error'
+				});
+				instance.status('Webhook error', 'red');
+			} else {
+				instance.status(`Webhook set for ${token.slice(0, 6)}...`, 'green');
+			}
+		});
+
+		update_outputs();
+	};
+
+	instance.install = update_outputs;
+
+	instance.destroy = function() {
+		token && RESTBuilder.POST(`${API}bot${token}/deleteWebhook`).exec(NOOP);
+	};
+
+	// Ensure outputs appear immediately after dropping the component
+	setTimeout(update_outputs, 0);
+};
+</script>
+
+<readme>
+Receives Telegram messages and routes them by type:
+- Messages with no `commands` key go to `message`.
+- Messages with a `commands` key go to the command's output (if configured).
+- If the command is not configured, the message goes to `unconfigured_command`.
+- Telegram API errors will be sent as `{ code, description }` on the `error` output.
+</readme>
+
+<settings>
+<div class="padding">
+	<ui-component name="input" path="?.token" config="required:1;camouflage:1" class="m">Telegram Token</ui-component>
+	<ui-component name="input" path="?.bots" config="type:checkbox">Allow bots</ui-component>
+	<ui-component name="textboxlist" path="?.commands" config="placeholder:/start,/help" class="m">Supported Commands</ui-component>
+</div>
+</settings>
+
+<style>
+.f-telegramreceiver header {
+	background-color: #80b3e6;
+}
+.f-telegramreceiver footer {
+	background-color: #80b3e6;
+}
+figure[data-id="telegramreceiver"] {
+	background-color: #80b3e6;
+	font-weight: bold;
+}
+</style>
+
+<body>
+	<header>
+		<i class="ICON"></i><b>NAME</b>
+	</header>
+	<footer>
+		<b>Telegram</b>
+	</footer>
+</body>

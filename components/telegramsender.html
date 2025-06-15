@@ -1,0 +1,140 @@
+<script total>
+exports.id = 'telegramsender';
+exports.name = 'Sender';
+exports.group = 'Telegram';
+exports.icon = 'ti ti-send';
+exports.author = 'Total.js | Alberto Cruz';
+exports.version = '1';
+exports.config = {
+	token: '',
+	chatid: '',
+	silent: false,
+	reply: false,
+	caption: false,
+	mode: 'MarkdownV2'
+};
+exports.inputs = [{ id: 'input', name: 'Input' }];
+
+exports.make = function(instance, config) {
+	const API = 'https://api.telegram.org/';
+	let cfg;
+
+	const escape = text => text.replace(/[\_\*\[\]\(\)~`>#+\-=|{}.!]/g, ch => '\\' + ch);
+
+	function send(type, data, token) {
+		RESTBuilder.POST(`${API}bot${token}/${type}`, data).keepalive().exec((err, res) => {
+			if (res && !res.ok)
+				instance.throw(res.description || 'Telegram API error');
+		});
+	}
+
+	instance.message = function($) {
+		const d = $.data;
+		if (!d || typeof d !== 'object') return $.destroy();
+
+		const chat_id = d.chatid || cfg.chatid;
+		const token = d.token || cfg.token;
+		if (!chat_id || !token) return $.destroy();
+
+		const base = {
+			chat_id,
+			disable_notification: cfg.silent
+		};
+
+		if (cfg.reply && d.replyid)
+			base.reply_to_message_id = d.replyid;
+
+		if (d.photo)
+			send('sendPhoto', { ...base, photo: d.photo, caption: cfg.caption && d.caption ? escape(d.caption) : undefined, parse_mode: cfg.mode }, token);
+		else if (d.document)
+			send('sendDocument', { ...base, document: d.document, caption: cfg.caption && d.caption ? escape(d.caption) : undefined, parse_mode: cfg.mode }, token);
+		else if (d.video)
+			send('sendVideo', { ...base, video: d.video, caption: cfg.caption && d.caption ? escape(d.caption) : undefined, parse_mode: cfg.mode }, token);
+		else if (d.audio)
+			send('sendAudio', { ...base, audio: d.audio, caption: cfg.caption && d.caption ? escape(d.caption) : undefined, parse_mode: cfg.mode }, token);
+		else if (d.animation)
+			send('sendAnimation', { ...base, animation: d.animation, caption: cfg.caption && d.caption ? escape(d.caption) : undefined, parse_mode: cfg.mode }, token);
+		else if (d.voice)
+			send('sendVoice', { ...base, voice: d.voice, caption: cfg.caption && d.caption ? escape(d.caption) : undefined, parse_mode: cfg.mode }, token);
+		else if (Array.isArray(d.mediagroup))
+			send('sendMediaGroup', { ...base, media: d.mediagroup }, token);
+		else if (d.location && typeof d.location.latitude === 'number' && typeof d.location.longitude === 'number')
+			send('sendLocation', { ...base, latitude: d.location.latitude, longitude: d.location.longitude }, token);
+		else if (d.venue && d.venue.latitude && d.venue.longitude && d.venue.title && d.venue.address)
+			send('sendVenue', { ...base, latitude: d.venue.latitude, longitude: d.venue.longitude, title: d.venue.title, address: d.venue.address }, token);
+		else if (d.poll && d.poll.question && Array.isArray(d.poll.options) && d.poll.options.length > 1)
+			send('sendPoll', { ...base, question: d.poll.question, options: d.poll.options }, token);
+		else if (d.dice)
+			send('sendDice', { ...base }, token);
+		else if (d.text)
+			send('sendMessage', { ...base, text: escape(d.text), parse_mode: cfg.mode, disable_web_page_preview: d.preview === false }, token);
+
+		$.destroy();
+	};
+
+	instance.configure = () => cfg = instance.replace(config);
+	instance.variables = instance.variables2 = instance.configure;
+	instance.configure();
+};
+</script>
+
+<readme>
+Send different Telegram content types:
+- `text`
+- `photo` (URL or file ID)
+- `document` (URL or file ID)
+- `video` (URL or file ID)
+- `audio` (URL or file ID)
+- `animation` (URL or file ID)
+- `voice` (URL or file ID)
+- `location` ({ latitude, longitude })
+- `venue` ({ latitude, longitude, title, address })
+- `poll` ({ question, options[] })
+- `dice` (automatic emoji 🎲)
+- `mediagroup` (Array of media items for sendMediaGroup)
+
+Optionally includes:
+- `caption` for media (escaped with MarkdownV2)
+- `silent` flag
+- `reply` handling from previous Telegram component
+- You can override `chatid` and `token` per-message in JSON
+</readme>
+
+<settings>
+<div class="padding">
+	<div class="row">
+		<div class="col-md-3 m">
+			<ui-component name="input" path="?.chatid" config="monospace:1;align:1">Chat ID</ui-component>
+		</div>
+		<div class="col-md-9 m">
+			<ui-component name="input" path="?.token" config="camouflage:1">Telegram Token</ui-component>
+		</div>
+	</div>
+	<ui-component name="input" path="?.mode" config="dirsource:MarkdownV2|Markdown V2,Markdown|Markdown,HTML|HTML;required:1" class="m">Parse mode</ui-component>
+	<ui-component name="input" path="?.caption" config="type:checkbox">Enable Caption</ui-component>
+	<ui-component name="input" path="?.reply" config="type:checkbox">Mark as Reply</ui-component>
+	<ui-component name="input" path="?.silent" config="type:checkbox">Send silently</ui-component>
+</div>
+</settings>
+
+<style>
+.f-telegramsender header {
+	background-color: #80b3e6;
+}
+.f-telegramsender footer {
+	background-color: #80b3e6;
+}
+figure[data-id="telegramsender"] {
+	background-color: #80b3e6;
+	font-weight: bold;
+}
+</style>
+
+<body>
+<header>
+	<i class="ICON"></i><b>NAME</b>
+</header>
+<footer>
+	<b>Telegram</b>
+</footer>
+</body>
