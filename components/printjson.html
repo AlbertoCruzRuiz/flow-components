@@ -40,8 +40,6 @@ exports.make = function (instance, config) {
 </script>
 
 <style>
-.CLASS footer > ui-component { margin: 10px; }
-
 .CLASS pre {
 	font-size: 10px;
 	margin: 0;
@@ -50,20 +48,6 @@ exports.make = function (instance, config) {
 	border-radius: var(--radius);
 }
 
-.CLASS button {
-	float: right;
-	height: 20px;
-	font-size: 11px;
-	border: 1px solid #e0e0e0;
-	border-radius: var(--radius);
-	color: #000;
-	background-color: transparent;
-	margin: 0;
-	padding: 0 5px;
-}
-
-.CLASS button:hover { background-color: #f8f8f8; }
-.CLASS button:active { background-color: #e0e0e0; }
 .CLASS .ui-objecttree {
 	background-color: #f0f0f0;
 	padding: 4px;
@@ -74,24 +58,17 @@ exports.make = function (instance, config) {
 .ui-dark .CLASS button:hover { background-color: #303030; }
 .ui-dark .CLASS button:active { background-color: #404040; }
 
-.f-printjson header {
+.CLASS header {
 	background-color: #80a07a;
-	font-weight: bold;
-	border-radius: 8px 8px 0 0;
+}
+
+.CLASS footer {
+	background-color: #80a07a;
 }
 
 figure[data-id="printjson"] {
 	background-color: #80a07a;
 	font-weight: bold;
-}
-
-.ui-flow .component {
-	border-radius: 9px 9px 0 0;
-}
-
-.ui-flow .component-io {
-	width: 14px;
-	height: 14px;
 }
 </style>
 
@@ -112,11 +89,14 @@ El componente imprime los datos entrantes en formato JSON.
 
 <body>
 <header>
-	<button class="exec" data-exec="FUNC.trigger">Clear</button>
+	<button class="exec button" data-exec="FUNC.trigger">Clear</button>
 	<i class="ICON"></i>NAME
 </header>
-<footer>
+<div class="component-body">
 	<ui-component name="objecttree" path="!STATUS" config="exec:FUNC.printjson_click" class="selectable"></ui-component>
+</div>
+<footer>
+	<b>Data Logger</b>
 </footer>
 </body>
 
