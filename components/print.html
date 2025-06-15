@@ -83,24 +83,16 @@ exports.make = function (instance, config) {
 	tab-size: 2;
 }
 
-.f-print header {
+.CLASS header {
 	background-color: #80a07a;
-	font-weight: bold;
-	border-radius: 8px 8px 0 0;
+}
+.CLASS footer {
+	background-color: #80a07a;
 }
 
 figure[data-id="print"] {
 	background-color: #80a07a;
 	font-weight: bold;
-}
-
-.ui-flow .component {
-	border-radius: 9px 9px 0 0;
-}
-
-.ui-flow .component-io {
-	width: 14px;
-	height: 14px;
 }
 </style>
 
@@ -124,13 +116,16 @@ El componente imprime los datos entrantes.
 	<button class="exec button" data-exec="FUNC.trigger">Clear</button>
 	<i class="$ICON"></i>$NAME
 </header>
-<footer>
+<div class="component-body">
 	<ui-bind path="!$STATUS" config="html pre:debugprinter(value);show" class="hidden selectable block">
 		<span class="readme" title="Open in new window"><i class="ti ti-window"></i></span>
 		<div class="noscrollbar mt5">
 			<pre class="json"></pre>
 		</div>
 	</ui-bind>
+</div>
+<footer>
+	<b>Data Logger</b>
 </footer>
 </body>
 
@@ -138,7 +133,7 @@ El componente imprime los datos entrantes.
 W.debugprinter = function (value) {
 	if (!value)
 		return "";
-	
+
 	value = JSON.parse(value);
 	return typeof value === "string"
 		? Thelpers.encode(value)
