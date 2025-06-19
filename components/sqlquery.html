@@ -91,29 +91,15 @@ ON("configure_sqlquery", function(data) {
 </settings>
 
 <style>
-.CLASS footer {
-	padding: 10px;
-	font-size: 12px;
-}
-
-.f-sqlquery header {
+.CLASS header {
 	background-color: #d3af80;
-	font-weight: bold;
-	border-radius: 8px 8px 0 0;
 }
-
+.CLASS footer {
+	background-color: #d3af80;
+}
 figure[data-id="sqlquery"] {
 	background-color: #d3af80;
 	font-weight: bold;
-}
-
-.ui-flow .component {
-	border-radius: 9px 9px 0 0;
-}
-
-.ui-flow .component-io {
-	width: 14px;
-	height: 14px;
 }
 </style>
 
@@ -121,9 +107,12 @@ figure[data-id="sqlquery"] {
 	<header>
 		<i class="$ICON"></i>$NAME
 	</header>
-	<footer>
+	<div class="component-body">
 		<ui-bind path="$CONFIG.id" config="text span;empty">
-			Database: <span class="b"></span>
+				Database: <span class="b"></span>
 		</ui-bind>
+	</div>
+	<footer>
+		<b>Databases</b>
 	</footer>
 </body>
