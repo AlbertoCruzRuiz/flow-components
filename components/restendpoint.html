@@ -185,6 +185,13 @@ __Output data__:
 </settings>
 
 <style>
+.CLASS header { background-color: #dbdba5; }
+.CLASS footer { background-color: #dbdba5; }
+figure[data-id="restendpoint"] {
+	background-color: #dbdba5;
+	font-weight: bold;
+}
+
 .CLASS .method {
 	background-color: var(--color);
 	color: white;
@@ -197,31 +204,24 @@ __Output data__:
 	line-height: 1.4;
 	margin: 5px 10px;
 }
-
-.CLASS header { background-color: #dbdba5; }
-.CLASS footer { background-color: #dbdba5; }
-figure[data-id="restendpoint"] {
-	background-color: #dbdba5;
-	font-weight: bold;
-}
 </style>
 
 <body>
 	<header>
-		<i class="$ICON"></i>$NAME&nbsp;
-		<button class="exec button" data-exec="FUNC.trigger()">Copy URL</button>
+		<i class="$ICON"></i>$NAME
 	</header>
 	<div class="component-body">
 		<div id="endpoint-info" class="endpoint-info"></div>
 	</div>
 	<footer>
-		<b>Rest API</b>
+	<b>Rest API</b>
 	</footer>
 </body>
 
 <script>
 TOUCH(function(exports, reinit) {
 	const template = Tangular.compile('{{ if value.user == 1 }}<i class="ti ti-lock red mr10"></i>{{ else if value.user == 2 }}<i class="ti ti-unlock blue mr10"></i>{{ fi }}<span class="method">{{ value.method }}</span> <a href="{{ value.link }}" target="_blank">{{ value.url }}</a>{{ if value.method === "API" }} {{ value.action }}{{ fi }}');
+
 
 	function reload() {
 		const model = CLONE(exports.config);
@@ -233,19 +233,10 @@ TOUCH(function(exports, reinit) {
 		else
 			model.link = flow.head.origin + model.link;
 
-		exports.link = model.link;
 		exports.element.find('#endpoint-info').html(template({ value: model }));
 	}
+
 	exports.configure = reload;
 	reload();
 });
-
-FUNC.trigger = function() {
-	const link = document.querySelector('#endpoint-info a')?.href;
-	if (link) {
-		navigator.clipboard.writeText(link).catch(() => {});
-	} else {
-		console.warn('No se encontró ninguna URL para copiar.');
-	}
-};
 </script>
