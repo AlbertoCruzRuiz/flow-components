@@ -1,9 +1,9 @@
 <script total>
-exports.id = "trigger";
-exports.name = "Trigger";
+exports.id = "triggerpushbutton";
+exports.name = "Push Button";
 exports.group = "Triggers";
 exports.version = "1";
-exports.icon = "ti ti-start";
+exports.icon = "ti ti-pointer";
 exports.author = "Total.js | Alberto Cruz";
 
 exports.config = {
@@ -61,6 +61,16 @@ exports.make = function (instance, config) {
 </script>
 
 <style>
+.CLASS header { background-color: #dad5eb; }
+
+.CLASS footer { background-color: #dad5eb; }
+
+figure[data-id="triggerpushbutton"] {
+    background-color: #dad5eb;
+    font-weight: bold;
+}
+
+
 .CLASS .padding { padding: 0 10px 10px; }
 
 .CLASS .padding.mt20 { margin-top: 10px; }
@@ -86,22 +96,6 @@ exports.make = function (instance, config) {
 
 .ui-dark .CLASS button:hover { background: #303030; }
 .ui-dark .CLASS button:active { background: #404040; }
-
-.f-trigger header {
-    background-color: #dad5eb;
-    font-weight: bold;
-    border-radius: 8px 8px 0 0;
-}
-
-.f-trigger footer {
-	background-color: #dad5eb;
-}
-
-figure[data-id="trigger"] {
-    background-color: #dad5eb;
-    font-weight: bold;
-}
-
 </style>
 
 <settings>
