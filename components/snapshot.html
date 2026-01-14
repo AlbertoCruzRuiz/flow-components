@@ -1,0 +1,42 @@
+<script total>
+exports.id = 'snapshot';
+exports.name = 'Snapshot';
+exports.group = 'Data Logger';
+exports.icon = 'ti ti-camera';
+exports.version = '1.0.0';
+exports.author = 'Total.js | Alberto Cruz';
+exports.inputs = [ { id: 'input', name: 'Input' } ];
+exports.outputs = [ { id: 'output', name: 'Output' } ];
+exports.kind = 'trigger';
+
+exports.make = (instance) => {
+  let buffered_message = null;
+
+  instance.message = $ => {
+    buffered_message = CLONE($.data);
+    $.send('output', $.data);
+  };
+
+  instance.trigger = () => {
+    instance.send('output', CLONE(buffered_message));
+  };
+
+  instance.close = () => {
+    buffered_message = null;
+  };
+};
+</script>
+
+<readme>
+Toma una instantánea del mensaje para recuperarlo bajo demanda.
+</readme>
+
+<body>
+	<header><i class="$ICON"></i>$NAME</header>
+	<button class="button" name='trigger'>Trigger</button>
+	<footer>Data Logger</footer>
+</body>
+
+<style>
+.CLASS header, .CLASS footer, figure[data-id='snapshot'] { background-color: #80a07a; }
+</style>
