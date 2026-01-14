@@ -1,162 +1,57 @@
 <script total>
-exports.id = "print";
-exports.name = "Print";
-exports.group = "Data Logger";
-exports.version = "1";
-exports.icon = "ti ti-print";
-exports.author = "Total.js | Alberto Cruz";
+exports.id = 'print';
+exports.name = 'Print';
+exports.group = 'Data Logger';
+exports.version = '1.0.0';
+exports.icon = 'ti ti-print';
+exports.author = 'Total.js | Alberto Cruz';
+exports.inputs = [{ id: 'input', name: 'Input' }];
 
-exports.config = {
-	repo: false,
-	data: true,
-	text: false
-};
+exports.make = instance => {
+	const DTF_ISO8601 = new Intl.DateTimeFormat('en-CA', {
+		timeZone: 'Europe/Madrid',
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit',
+		hour12: false,
+		timeZoneName: 'shortOffset'
+	});
 
-exports.inputs = [{ id: "input", name: "Input" }];
+	const STAMP_RE = /(\d{4}-\d{2}-\d{2}), (\d{2}:\d{2}:\d{2}) [A-Z]{3}([+-])(\d{1,2})(?::\d{2})?/;
 
-exports.make = function (instance, config) {
+	function stamp_ISO8601(date = new Date()) {
+		return DTF_ISO8601.format(date).replace(STAMP_RE, (_, d, t, sign, h) => `${d} ${t}${sign}${h.padStart(2, '0')}`);
+	}
 
-	const serializer = (key, value) => {
-		return value && value.type === "Buffer" && value.data
-			? "<Buffer " + value.data.splice(0, 10).map(n => n.toString(16).padStart(2, "0")).join("") + "..."
-			: value;
-	};
-
-	instance.message = function ($) {
-		let data = $.data;
-
-		if (config.data !== false && data instanceof Buffer)
-			data = "<Buffer " + data.toString("hex").substring(0, 10) + "...";
-
-		const enabledCount = Object.values(config).filter(Boolean).length;
-		let output = enabledCount > 1 ? {} : null;
-
-		if (config.repo)
-			output ? output.repo = $.repo : output = $.repository;
-
-		if (config.data)
-			output ? output.data = $.data : output = $.data;
-
-		if (output) {
-			const json = JSON.stringify(output, serializer);
-			instance.status(json, 200);
+	instance.message = $ => {
+		if(!$.data) {
+			instance.status(String($.data));
+		} else if($.data instanceof Date) {
+			instance.status(stamp_ISO8601(new Date($.data)));
+		} else {
+			instance.status($.data);
 		}
 
 		$.destroy();
 	};
 
-	instance.trigger = () => instance.status("");
+	instance.trigger = () => { instance.status(''); };
 };
 </script>
 
-<style>
-.CLASS footer > ui-bind {
-	margin: 10px;
-}
-
-.CLASS pre {
-	font-size: 10px;
-	margin: 0;
-	padding: 5px;
-	background-color: #f0f0f0;
-	border-radius: var(--radius);
-}
-
-.CLASS .json {
-	white-space: pre;
-}
-
-.CLASS .noscrollbar {
-	max-height: 250px;
-}
-
-.CLASS .readme {
-	position: absolute;
-	right: 5px;
-	margin-top: -5px;
-	font-size: 11px;
-	cursor: pointer;
-}
-
-.ui-dark .CLASS pre {
-	background-color: #404040;
-	tab-size: 2;
-}
-
-.CLASS header {
-	background-color: #80a07a;
-}
-.CLASS footer {
-	background-color: #80a07a;
-}
-
-figure[data-id="print"] {
-	background-color: #80a07a;
-	font-weight: bold;
-}
-</style>
-
-<settings>
-<div class="padding">
-	<ui-component name="input" path="?.repo" config="type:checkbox">
-		Shows repository
-	</ui-component>
-	<ui-component name="input" path="?.data" config="type:checkbox">
-		Shows data
-	</ui-component>
-</div>
-</settings>
-
 <readme>
-El componente imprime los datos entrantes.
+El componente muestra el dato entrante.
 </readme>
 
 <body>
-<header>
-	<button class="exec button" data-exec="FUNC.trigger">Clear</button>
-	<i class="$ICON"></i>$NAME
-</header>
-<div class="component-body">
-	<ui-bind path="!$STATUS" config="html pre:debugprinter(value);show" class="hidden selectable block">
-		<span class="readme" title="Open in new window"><i class="ti ti-window"></i></span>
-		<div class="noscrollbar mt5">
-			<pre class="json"></pre>
-		</div>
-	</ui-bind>
-</div>
-<footer>
-	<b>Data Logger</b>
-</footer>
+<header><i class='$ICON'></i>$NAME<button class='button exec' data-exec='FUNC.trigger'>Clear</button></header>
+<ui-component name="objecttree" path='!$STATUS' class='selectable'></ui-component>
+<footer>Data Logger</footer>
 </body>
 
-<script>
-W.debugprinter = function (value) {
-	if (!value)
-		return "";
-
-	value = JSON.parse(value);
-	return typeof value === "string"
-		? Thelpers.encode(value)
-		: Thelpers.jsonformat(JSON.stringify(value, null, "\t"));
-};
-
-TOUCH((exports, reinit) => {
-	if (reinit)
-		return;
-
-	let laststatus;
-
-	exports.status = function (status, isinit) {
-		laststatus = status;
-	};
-
-	exports.element.on("click", ".readme", function () {
-		let status = laststatus ? JSON.parse(laststatus) : "";
-
-		if (status && typeof status !== "string")
-			status = JSON.stringify(status, null, "  ");
-
-		FUNC.readme("Debug", "```json\n" + status + "\n```");
-	});
-});
-</script>
+<style>
+.CLASS header, .CLASS footer, figure[data-id='print'] { background-color: #80a07a;}
+</style>
