@@ -12,15 +12,15 @@
 		"readme": "El componente muestra el dato entrante."
 	},
 	{
-		"id": "code",
-		"group": "Data Manipulation",
-		"name": "Code",
-		"url": "https://albertocruzruiz.github.io/flow-components/components/code.html",
+		"id": "snapshot",
+		"group": "Data Logger",
+		"name": "Snapshot",
+		"url": "https://albertocruzruiz.github.io/flow-components/components/snapshot.html",
 		"author": "Total.js | Alberto Cruz",
-		"icon": "ti ti-code",
+		"icon": "ti ti-camera",
 		"color": "",
-		"version": "1",
-		"kind": "",
-		"readme": "This component executes a custom JavaScript code as it is.\n\nTo send data to the default output use `send(somedata);`\nTo send data to specific output when number of outputs > 1 use `$.send('outputX', somedata)` where `X` is output index, see example bellow:\n- first output--> `send(somedata)` or `$.send('output', somedata)`\n- second output --> `$.send('output2', somedata)`\n- ...\n- 5th output --> `$.send('output5', somedata)`\n- etc."
+		"version": "1.0.0",
+		"kind": "trigger",
+		"readme": "Toma una instantánea del mensaje para recuperarlo bajo demanda."
 	},
 ]
