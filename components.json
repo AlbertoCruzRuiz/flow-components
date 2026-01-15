@@ -23,4 +23,16 @@
 		"kind": "trigger",
 		"readme": "Toma una instantánea del mensaje para recuperarlo bajo demanda."
 	},
+	{
+		"id": "code",
+		"group": "Data Manipulation",
+		"name": "Code",
+		"url": "https://albertocruzruiz.github.io/flow-components/components/code.html",
+		"author": "Total.js | Alberto Cruz",
+		"icon": "ti ti-code",
+		"color": "",
+		"version": "1.0.0",
+		"kind": "action",
+		"readme": "Ejecuta el código JavaScript programado al recibir un mensaje."
+	},
 ]
