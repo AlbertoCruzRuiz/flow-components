@@ -1,15 +1,19 @@
 <script total>
-
-	exports.id = "code";
-	exports.name = "Code";
-	exports.group = "Data Manipulation";
-	exports.version = "1";
-	exports.icon = "ti ti-code";
-	exports.author = "Total.js | Alberto Cruz";
-	exports.config = {
-		outputs: 1,
-		name: "Code",
-		code: `// # Input data #
+exports.id = 'code';
+exports.name = 'Code';
+exports.group = 'Data Manipulation';
+exports.version = '1.0.0';
+exports.icon = 'ti ti-code';
+exports.author = 'Total.js | Alberto Cruz';
+exports.kind = 'action';
+exports.inputs = [{ id: 'input', name: 'Input: data' }];
+exports.outputs = [
+	{ id: 'output1', name: 'Output 1: 1' },
+	// { id: 'error', name: 'Error' }
+];
+exports.config = {
+	outputs: 1,
+	code: `// # Input data #
 // data types: {String/Number/Boolean/Date/Buffer/Object};
 // let variable_1 = data;
 // let variable_2 = data.message;
@@ -19,152 +23,80 @@
 // OR
 //send(output_number, data);
 
-// send(1, variable_2);
-`
-	};
+// send(1, variable_2);`
+};
+exports.meta = {
+	settingswidth: 1280,
+	display: true
+};
 
-	exports.inputs = [{ id: "input", name: "Input: data" }];
-	exports.outputs = [{ id: "output", name: "Output 1: output_1" }];
-	exports.meta = {
-		settingswidth: 1200,
-		display: true
-	};
-
-	exports.make = function(instance, config) {
-
-		let fn = null;
-
-		instance.message = function($) {
-			if (!fn)
-				return;
-
-			let handled = false;
-
-			// Hook into send() and throw() to track usage
-			const originalSend = $.send;
-			const originalThrow = $.throw;
-
-			$.send = function() {
-				handled = true;
-				return originalSend.apply($, arguments);
-			};
-
-			$.throw = function() {
-				handled = true;
-				return originalThrow.apply($, arguments);
-			};
-
-			try {
-				const send = function(a, b) {
-					if (arguments.length === 1) {
-						$.send("output", a);
-					} else if (typeof a === "number") {
-						const id = "output" + (a === 1 ? "" : a);
-						$.send(id, b);
-					} else {
-						$.send(a, b);
-					}
-				};
-
-				fn($.data, instance, $, $, F.require, send, $.repo, $.vars, $.data);
-			} catch (err) {
-				$.throw(err);
-			}
-
-			if (!handled)
-				$.destroy();
-		};
-
-		instance.configure = function() {
-			instance.outputs = Array.from({ length: config.outputs }, (_, i) => ({
-				id: "output" + (i === 0 ? "" : i + 1),
-				name: "Output " + (i + 1) + ": output_" + (i + 1)
-			}));
-			instance.save();
-
-			try {
-				if (config.code) {
-					instance.status(1);
-					fn = new Function("value", "instance", "$", "message", "require", "send", "repo", "vars", "data", config.code);
-				} else {
-					instance.status(0);
-					fn = null;
-				}
-			} catch (err) {
-				fn = null;
-				instance.throw("Code: " + err.message);
+exports.make = (instance, config) => {
+	let fn = null;
+	
+	instance.message = $ => {
+		const send = (...args) => {
+			if (args.length === 1) {
+				$.send('output1', args[0]);
+			} else if (typeof args[0] === 'number') {
+				$.send('output' + args[0], args[1]);
+			} else {
+				$.send(args[0], args[1]);
 			}
 		};
 
-		instance.close = () => fn = null;
+		try {
+			fn(send, $.data);
+		} catch (err) {
+			instance.throw('Code: ' + err.message);
+			// $.send('error', err?.message || String(err));
+		}
 
-		instance.configure();
+		$.destroy();
 	};
 
+	instance.configure = () => {
+		instance.outputs = Array.from({ length: config.outputs }, (_, i) => ({
+			id: 'output' + (i + 1),
+			name: 'Output ' + (i + 1) + ': ' + (i + 1)
+		}));
+		// instance.outputs.push({ id: 'error', name: 'Error' });
+
+		instance.save();
+
+		try {
+			fn = new Function('send', 'data', config.code);
+		} catch (err) {
+			fn = new Function('send', 'data', '');
+			instance.throw('Code: ' + err.message);
+		}
+	};
+
+	instance.close = () => { fn = null; };
+
+	instance.configure();
+};
 </script>
 
 <readme>
-This component executes custom JavaScript dynamically.
+Ejecuta el código JavaScript programado al recibir un mensaje.
 
-You can send output using:
-- `send(data)` → sends to first output (`output_1`)
-- `send(3, data)` → sends to `output_3`
-- `$.send("output2", data)` → traditional style
-- `$.throw(error)` → sends error
-- `$.destroy()` is called automatically if nothing is sent or thrown
+Puedes enviar mensajes a las salidas empleando:
+- `send(data)` → envía a la única o primera salida `Output 1`
+- `send(N, data)` → envía a la salida `Output N`
 </readme>
 
 <settings>
-	<div class="padding">
-		<div class="row">
-			<div class="col-md-10 m">
-				<ui-component name="input" path="?.name">Name</ui-component>
-			</div>
-			<div class="col-md-2 m">
-				<ui-component name="input" path="?.outputs" config="type:number;format:">Number of outputs</ui-component>
-			</div>
-		</div>
-		<div class="ui-input-label">Code:</div>
-		<div class="m">
-			<ui-component name="codemirror" path="?.code" config="type:javascript;minheight:300;parent:auto;margin:60;tabs:true;trim:true"></ui-component>
-		</div>
-	</div>
+<div class="padding">
+	<ui-component name="input" path="?.outputs" config="type:number;minvalue:1;maxvalue;8">Número de salidas</ui-component>
+	<ui-component name="codemirror" path="?.code" config="type:javascript;minheight:300;parent:auto;margin:60;tabs:true;trim:true">Código</ui-component>
+</div>
 </settings>
 
-<script>
-	TOUCH(function(exports) {
-		exports.configure = function() {
-			const changes = exports.instance.changes;
-			if (changes?.newbie) {
-				const count = exports.instance.config.outputs;
-				exports.instance.outputs = Array.from({ length: count }, (_, i) => ({
-					id: "output" + (i === 0 ? "" : i + 1),
-					name: "Output " + (i + 1) + ": output_" + (i + 1)
-				}));
-				UPD("flow.data");
-			}
-		};
-	});
-</script>
-
 <body>
-	<header>
-		<i class="ICON"></i>NAME
-	</header>
-	<footer>
-		<b>Data Manipulation</b>
-	</footer>
+	<header><i class="$ICON"></i>$NAME</header>
+	<footer>Data Manipulation</footer>
 </body>
 
 <style>
-.CLASS header {
-	background-color: #f0c59a;
-}
-.CLASS footer {
-	background-color: #f0c59a;
-}
-figure[data-id="code"] {
-	background-color: #f0c59a;
-	font-weight: bold;
-}
+.CLASS header, .CLASS footer, figure[data-id="code"] { background-color: #f0c59a; }
 </style>
